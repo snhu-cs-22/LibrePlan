@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>450</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>LibrePlan</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>resources/icon.png</normaloff>resources/icon.png</iconset>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QVBoxLayout" name="windowLayout">
+    <property name="sizeConstraint">
+     <enum>QLayout::SetNoConstraint</enum>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QTabWidget" name="tabWidget">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="tabShape">
+       <enum>QTabWidget::Rounded</enum>
+      </property>
+      <property name="currentIndex">
+       <number>1</number>
+      </property>
+      <property name="elideMode">
+       <enum>Qt::ElideNone</enum>
+      </property>
+      <widget class="QWidget" name="tab_plan">
+       <attribute name="title">
+        <string>Plan</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="planLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="plan_button_layout">
+          <property name="spacing">
+           <number>3</number>
+          </property>
+          <item>
+           <widget class="QPushButton" name="pushButton_start">
+            <property name="text">
+             <string>&amp;Start</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_end">
+            <property name="text">
+             <string>&amp;Finish</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_interrupt">
+            <property name="text">
+             <string>&amp;Interrupt</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_abort">
+            <property name="text">
+             <string>&amp;Abort</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableView" name="table_plan">
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderHighlightSections">
+           <bool>false</bool>
+          </attribute>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="tab_tasklist">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <attribute name="title">
+        <string>Tasklist</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="tasklistLayout">
+        <property name="leftMargin">
+         <number>5</number>
+        </property>
+        <property name="topMargin">
+         <number>5</number>
+        </property>
+        <property name="rightMargin">
+         <number>5</number>
+        </property>
+        <property name="bottomMargin">
+         <number>5</number>
+        </property>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <item>
+           <widget class="QPushButton" name="pushButton_new_task">
+            <property name="text">
+             <string>&amp;New Task</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="tasklist_filter">
+            <property name="placeholderText">
+             <string>Filter...</string>
+            </property>
+            <property name="clearButtonEnabled">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QTableView" name="table_tasklist">
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+          <attribute name="verticalHeaderVisible">
+           <bool>false</bool>
+          </attribute>
+          <attribute name="verticalHeaderHighlightSections">
+           <bool>false</bool>
+          </attribute>
+         </widget>
+        </item>
+       </layout>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>600</width>
+     <height>20</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <addaction name="actionNew_Plan"/>
+    <addaction name="separator"/>
+    <addaction name="actionImport_Plan"/>
+    <addaction name="actionExport_Plan"/>
+    <addaction name="separator"/>
+    <addaction name="actionImport_Tasklist"/>
+    <addaction name="actionExport_Tasklist"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>&amp;Tools</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>&amp;Help</string>
+    </property>
+    <addaction name="actionAbout"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuTask">
+    <property name="title">
+     <string>T&amp;asklist</string>
+    </property>
+    <addaction name="actionNew_Task"/>
+    <addaction name="separator"/>
+    <addaction name="actionExport_Tasks_2"/>
+   </widget>
+   <widget class="QMenu" name="menuActivity">
+    <property name="title">
+     <string>&amp;Plan</string>
+    </property>
+    <addaction name="actionNew_Activity"/>
+    <addaction name="separator"/>
+    <addaction name="actionExport_Activities"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuActivity"/>
+   <addaction name="menuTask"/>
+   <addaction name="menuTools"/>
+   <addaction name="menuHelp"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionAbout">
+   <property name="text">
+    <string>&amp;About LibrePlan...</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">F1</string>
+   </property>
+  </action>
+  <action name="actionNew_Plan">
+   <property name="text">
+    <string>&amp;New Plan...</string>
+   </property>
+  </action>
+  <action name="actionExport_Plan">
+   <property name="text">
+    <string>&amp;Export Plan...</string>
+   </property>
+  </action>
+  <action name="actionImport_Plan">
+   <property name="text">
+    <string>&amp;Import Plan...</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>E&amp;xit</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+Q</string>
+   </property>
+  </action>
+  <action name="actionImport_Tasklist">
+   <property name="text">
+    <string>I&amp;mport Tasklist...</string>
+   </property>
+  </action>
+  <action name="actionExport_Tasklist">
+   <property name="text">
+    <string>Ex&amp;port Tasklist...</string>
+   </property>
+  </action>
+  <action name="actionNew_Task">
+   <property name="text">
+    <string>New Task</string>
+   </property>
+  </action>
+  <action name="actionNew_Activity">
+   <property name="text">
+    <string>New Activity</string>
+   </property>
+  </action>
+  <action name="actionExport_Activities">
+   <property name="text">
+    <string>Export Activities...</string>
+   </property>
+  </action>
+  <action name="actionExport_Tasks_2">
+   <property name="text">
+    <string>Export Tasks...</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
