@@ -2,7 +2,9 @@
 resources
 
 # Files
-mainwin.py
+
+# Compiled .ui files
+ui/forms/*.py
 
 # Boilerplate from https://github.com/github/gitignore/blob/main/Python.gitignore
 

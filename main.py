@@ -7,7 +7,7 @@ from PyQt5.QtCore import QStandardPaths, QTimer, QTime
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMainWindow, QMessageBox, QShortcut
 
-from mainwin import Ui_MainWindow
+from ui.forms.main_window import Ui_MainWindow
 from item_delegates import GenericDelegate, DeadlineTypeDelegate
 from plan import Plan
 from plan_table import PlanTableModel
