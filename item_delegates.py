@@ -79,3 +79,13 @@ class DeadlineTypeDelegate(QStyledItemDelegate):
         if isinstance(value, DeadlineType):
             return value.name
         return str(value)
+
+class PercentDelegate(QStyledItemDelegate):
+
+    def __init__(self, parent, *args):
+        QStyledItemDelegate.__init__(self, parent, *args)
+
+    def displayText(self, value, locale):
+        if isinstance(value, float):
+            return f"{value * 100:.0f}%"
+        return str(value)

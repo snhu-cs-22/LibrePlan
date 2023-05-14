@@ -6,7 +6,7 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
 
 from ui.forms.main_window import Ui_MainWindow
-from item_delegates import GenericDelegate, DeadlineTypeDelegate
+from item_delegates import GenericDelegate, DeadlineTypeDelegate, PercentDelegate
 from plan import Plan
 from plan_table import PlanTableModel
 from tasklist import Tasklist
@@ -94,13 +94,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _set_up_tables(self, plan, tasklist):
         # Plan
 
+        self.plan_delegate = GenericDelegate(self)
+        self.tasklist_delegate = GenericDelegate(self)
+        self.deadline_type_delegate = DeadlineTypeDelegate(self)
+        self.percent_delegate = PercentDelegate(self)
+
         headers = ["F", "R", "Start", "Name", "Length", "ActLen", "OptLen", "Percent"]
         self.plan_model = PlanTableModel(self, plan, headers)
         self.plan_model.dataChanged.connect(self.update_title)
         self.table_plan.setModel(self.plan_model)
 
-        self.plan_delegate = GenericDelegate(self)
         self.table_plan.setItemDelegate(self.plan_delegate)
+        self.table_plan.setItemDelegateForColumn(7, self.percent_delegate)
 
         self.table_plan.resizeColumnsToContents()
         self.table_plan.horizontalHeader().setSectionsMovable(True)
@@ -111,11 +116,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tasklist_model = TasklistTableModel(self, tasklist, headers)
         self.tasklist_model.dataChanged.connect(self.update_title)
         self.table_tasklist.setModel(self.tasklist_model)
-
-        tasklist_delegate = GenericDelegate(self)
-        deadline_type_delegate = DeadlineTypeDelegate(self)
-        self.table_tasklist.setItemDelegate(tasklist_delegate)
-        self.table_tasklist.setItemDelegateForColumn(7, deadline_type_delegate)
+        self.table_tasklist.setItemDelegate(self.tasklist_delegate)
+        self.table_tasklist.setItemDelegateForColumn(0, self.percent_delegate)
+        self.table_tasklist.setItemDelegateForColumn(7, self.deadline_type_delegate)
 
         self.table_tasklist.resizeColumnsToContents()
         self.table_tasklist.horizontalHeader().setSectionsMovable(True)
