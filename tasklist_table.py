@@ -65,7 +65,7 @@ class TasklistTableModel(QAbstractTableModel):
 
     def setData(self, index, value, role=Qt.EditRole):
         if role == Qt.EditRole:
-            if not value:
+            if not index.isValid():
                 return False
             task = self._tasklist.tasks[index.row()]
             self._set_task_property_by_column_index(task, index.column(), value)

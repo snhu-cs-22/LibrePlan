@@ -6,7 +6,7 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
 
 from ui.forms.main_window import Ui_MainWindow
-from item_delegates import GenericDelegate, DeadlineTypeDelegate, PercentDelegate
+from item_delegates import GenericDelegate, BoolDelegate, DeadlineTypeDelegate, PercentDelegate
 from plan import Plan
 from plan_table import PlanTableModel
 from tasklist import Tasklist
@@ -96,6 +96,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.plan_delegate = GenericDelegate(self)
         self.tasklist_delegate = GenericDelegate(self)
+        self.bool_delegate = BoolDelegate(self)
         self.deadline_type_delegate = DeadlineTypeDelegate(self)
         self.percent_delegate = PercentDelegate(self)
 
@@ -105,6 +106,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_plan.setModel(self.plan_model)
 
         self.table_plan.setItemDelegate(self.plan_delegate)
+        self.table_plan.setItemDelegateForColumn(0, self.bool_delegate)
+        self.table_plan.setItemDelegateForColumn(1, self.bool_delegate)
         self.table_plan.setItemDelegateForColumn(7, self.percent_delegate)
 
         self.table_plan.resizeColumnsToContents()

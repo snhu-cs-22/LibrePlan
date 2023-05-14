@@ -62,7 +62,7 @@ class PlanTableModel(QAbstractTableModel):
 
     def setData(self, index, value, role=Qt.EditRole):
         if role in (Qt.DisplayRole, Qt.EditRole):
-            if not value:
+            if not index.isValid():
                 return False
             activity = self._plan.activities[index.row()]
             self._set_activity_property_by_column_index(activity, index.column(), value)

@@ -1,6 +1,18 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import QDate, QTime
-from PyQt5.QtWidgets import QStyledItemDelegate, QCheckBox, QSpinBox, QComboBox, QLineEdit, QDateEdit, QTimeEdit
+from PyQt5.QtCore import QDate, QTime, QPoint, QRect
+from PyQt5.QtWidgets import (
+    QApplication,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionButton,
+
+    QCheckBox,
+    QLineEdit,
+    QComboBox,
+    QSpinBox,
+    QDateEdit,
+    QTimeEdit
+)
 
 from tasklist import DeadlineType
 
@@ -53,6 +65,55 @@ class GenericDelegate(QStyledItemDelegate):
             editor.setTime(index.data())
 
         return None
+
+class BoolDelegate(QStyledItemDelegate):
+
+    def __init__(self, parent, *args):
+        QStyledItemDelegate.__init__(self, parent, *args)
+
+    def createEditor(self, parent, option, index):
+        return None
+
+    def getCheckBoxRect(self, check_box, option):
+        check_box_rect = QApplication.style().subElementRect(QStyle.SE_CheckBoxIndicator, check_box, None)
+        check_box_point = QPoint(
+                            option.rect.x() +
+                            (option.rect.width() -
+                            check_box_rect.width()) / 2,
+
+                            option.rect.y() +
+                            (option.rect.height() -
+                            check_box_rect.height()) / 2)
+
+        return QRect(check_box_point, check_box_rect.size())
+
+    def paint(self, painter, option, index):
+        check_box = QStyleOptionButton()
+
+        checked = index.data()
+        is_editable = int(index.flags() & QtCore.Qt.ItemIsEditable) > 0
+
+        check_box.state |= QStyle.State_On if checked else QStyle.State_Off
+        check_box.state |= QStyle.State_Enabled if is_editable else QStyle.State_ReadOnly
+
+        check_box.rect = self.getCheckBoxRect(check_box, option)
+
+        QApplication.style().drawControl(QStyle.CE_CheckBox, check_box, painter)
+
+    def editorEvent(self, event, model, option, index):
+        if not int(index.flags() & QtCore.Qt.ItemIsEditable) > 0:
+            return False
+
+        if event.type() == QtCore.QEvent.MouseButtonRelease and event.button() == QtCore.Qt.LeftButton:
+            self.setModelData(None, model, index)
+            self.sizeHintChanged.emit(index)
+            return True
+
+        return False
+
+    def setModelData(self, editor, model, index):
+        value = not index.data()
+        model.setData(index, value)
 
 class DeadlineTypeDelegate(QStyledItemDelegate):
 
