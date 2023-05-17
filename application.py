@@ -4,8 +4,8 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox, QShortcut
 
 from main_window import MainWindow
-from plan import Plan
-from tasklist import Tasklist
+from plan import PlanTableModel
+from tasklist import TasklistTableModel
 
 class Application(QApplication):
     PATH_APPDATA = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation) + "/LibrePlan"
@@ -18,8 +18,8 @@ class Application(QApplication):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.plan = Plan()
-        self.tasklist = Tasklist()
+        self.plan = PlanTableModel(self)
+        self.tasklist = TasklistTableModel(self)
         self.load_data()
 
         self.timer_activity_end = QTimer()
@@ -50,6 +50,10 @@ class Application(QApplication):
         # Timers
         self.timer_activity_end.timeout.connect(self.activity_end_dialog)
         self.timer_countdown.timeout.connect(self.send_window_title_update_signal)
+
+        # Data
+        self.plan.dataChanged.connect(self.titleUpdateRequested)
+        self.tasklist.dataChanged.connect(self.titleUpdateRequested)
 
     def _connectSlots(self):
         # Main window
@@ -96,7 +100,7 @@ class Application(QApplication):
         path = QFileDialog.getOpenFileName(None, "Import Tasks")[0]
 
         if path:
-            if self.tasklist.tasks:
+            if self.tasklist.rowCount(self) != 0:
                 replace = QMessageBox.warning(
                             None, None,
                             "There are tasks currently in this list. Replace?",
@@ -120,7 +124,7 @@ class Application(QApplication):
         path = QFileDialog.getOpenFileName(None, "Import Plan")[0]
 
         if path:
-            if self.plan.activities:
+            if self.plan.rowCount(self) != 0:
                 replace = QMessageBox.warning(
                             None, None,
                             "There are activities in the current plan. Replace?",
@@ -156,7 +160,7 @@ class Application(QApplication):
         print("Activity started")
 
         now = QTime.currentTime()
-        self.countdown_to = self.plan.activities[1].start_time
+        self.countdown_to = self.plan.get_activity(1).start_time
         self.timer_activity_end.start(now.msecsTo(self.countdown_to))
         self.timer_countdown.start(490)
 

@@ -1,9 +1,7 @@
 import json
 from enum import Enum, auto
 
-from PyQt5.QtCore import QDate
-
-DATE_FORMAT = "yyyy-MM-dd"
+from PyQt5.QtCore import Qt, QAbstractTableModel, QDate
 
 class DeadlineType(Enum):
     NONE = auto()
@@ -82,32 +80,42 @@ class Task:
     def calculate_priority(self, today):
         self.priority = self.value / self.cost * self._select_deadline_function(today)
 
-class Tasklist:
-    def __init__(self, tasks=[]):
-        self.tasks = tasks
+class TasklistTableModel(QAbstractTableModel):
+    def __init__(self, parent, *args):
+        QAbstractTableModel.__init__(self, parent, *args)
+        self._tasks = []
+        self._header = ["Priority", "Value", "Cost", "Name", "Date Added", "Deadline", "Halftime", "Deadline Type"]
+        self._EDITABLE_COLUMNS = [0, 1, 2, 3, 5, 7]
+        self._DATE_FORMAT = "yyyy-MM-dd"
+
+    def get_task(self, index):
+        return self._tasks[index]
+
+    def set_task(self, index, property):
+        self._set_task_property_by_column_index(index, property)
 
     def add_task(self, task=Task()):
         today = QDate.currentDate()
         task.calculate_priority(today)
-        self.tasks.append(task)
+        self._tasks.append(task)
 
     def delete_task(self, index=0):
-        self.tasks.pop(index)
+        self._tasks.pop(index)
 
     def clear(self):
-        self.tasks = []
+        self._tasks = []
 
     def calculate(self):
         today = QDate.currentDate()
-        if self.tasks:
-            for task in self.tasks:
+        if self._tasks:
+            for task in self._tasks:
                 task.calculate_priority(today)
-            self.tasks.sort(key = lambda task: task.priority, reverse = True)
+            self._tasks.sort(key = lambda task: task.priority, reverse = True)
 
     def import_tasks(self, path, replace=False):
         with open(path) as f:
             if replace:
-                self.tasks = []
+                self._tasks = []
 
             tasks_json = json.load(f)
 
@@ -116,29 +124,29 @@ class Tasklist:
                 task.name = task_json["name"]
                 task.value = task_json["value"]
                 task.cost = task_json["cost"]
-                task.DATE_CREATED = QDate.fromString(task_json["DATE_CREATED"], DATE_FORMAT)
+                task.DATE_CREATED = QDate.fromString(task_json["DATE_CREATED"], self._DATE_FORMAT)
                 try:
-                    task.set_deadline(QDate.fromString(task_json["deadline"], DATE_FORMAT))
+                    task.set_deadline(QDate.fromString(task_json["deadline"], self._DATE_FORMAT))
                     task.deadline_type = DeadlineType[task_json["deadline_type"]]
                 except:
                     task.deadline_type = DeadlineType.NONE
 
-                self.tasks.append(task)
+                self._tasks.append(task)
 
         self.calculate()
 
     def export_tasks(self, path):
         with open(path, "w") as f:
             tasks_properties = []
-            for task in self.tasks:
+            for task in self._tasks:
                 properties = {}
 
                 properties["name"] = task.name
                 properties["value"] = task.value
                 properties["cost"] = task.cost
-                properties["DATE_CREATED"] = task.DATE_CREATED.toString(DATE_FORMAT)
+                properties["DATE_CREATED"] = task.DATE_CREATED.toString(self._DATE_FORMAT)
                 properties["deadline_type"] = task.deadline_type.name
-                properties["deadline"] = task.deadline.toString(DATE_FORMAT)
+                properties["deadline"] = task.deadline.toString(self._DATE_FORMAT)
 
                 tasks_properties.append(properties)
 
@@ -146,12 +154,79 @@ class Tasklist:
             f.write(tasks_json)
 
     def debug_print_tasks(self):
-        for task in self.tasks:
+        for task in self._tasks:
             print(f"Name: {task.name}: ")
             print(f"    Priority: {'{:.2f}'.format(task.priority)}")
             print(f"    Value: {task.value}")
             print(f"    Cost: {task.cost}")
-            print(f"    Date Added: {task.DATE_CREATED.toString(DATE_FORMAT)}")
-            print(f"    Deadline: {task.deadline.toString(DATE_FORMAT)}")
-            print(f"    Halftime: {task.halftime.toString(DATE_FORMAT)}")
+            print(f"    Date Added: {task.DATE_CREATED.toString(self._DATE_FORMAT)}")
+            print(f"    Deadline: {task.deadline.toString(self._DATE_FORMAT)}")
+            print(f"    Halftime: {task.halftime.toString(self._DATE_FORMAT)}")
             print(f"    Deadline Type: {task.deadline_type}")
+
+    def _get_task_property_by_column_index(self, task, index):
+        if index == 0:
+            return task.priority
+        elif index == 1:
+            return task.value
+        elif index == 2:
+            return task.cost
+        elif index == 3:
+            return task.name
+        elif index == 4:
+            return task.DATE_CREATED
+        elif index == 5:
+            return task.deadline
+        elif index == 6:
+            return task.halftime
+        elif index == 7:
+            return task.deadline_type
+
+    def _set_task_property_by_column_index(self, task, index, value):
+        if index == 0:
+            task.priority = value
+        elif index == 1:
+            task.value = value
+        elif index == 2:
+            task.cost = value
+        elif index == 3:
+            task.name = value
+        elif index == 5:
+            task.deadline = value
+        elif index == 7:
+            task.deadline_type = value
+
+    # Qt API Implementation
+    ################################################################################
+
+    def rowCount(self, parent):
+        return len(self._tasks)
+
+    def columnCount(self, parent):
+        return len(self._header)
+
+    def data(self, index, role):
+        if role == Qt.DisplayRole:
+            task = self._tasks[index.row()]
+            return self._get_task_property_by_column_index(task, index.column())
+        return None
+
+    def headerData(self, column, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return self._header[column]
+        return None
+
+    def setData(self, index, value, role=Qt.EditRole):
+        if role == Qt.EditRole:
+            if not index.isValid():
+                return False
+            task = self._tasks[index.row()]
+            self._set_task_property_by_column_index(task, index.column(), value)
+            self.calculate()
+            self.dataChanged.emit(index, index)
+            return True
+
+    def flags(self, index):
+        if index.column() in self._EDITABLE_COLUMNS:
+            return super().flags(index) | Qt.ItemIsEditable
+        return super().flags(index)

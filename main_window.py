@@ -7,10 +7,8 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
 
 from ui.forms.main_window import Ui_MainWindow
 from item_delegates import GenericDelegate, BoolDelegate, DeadlineTypeDelegate, PercentDelegate
-from plan import Plan
-from plan_table import PlanTableModel
-from tasklist import Tasklist
-from tasklist_table import TasklistTableModel
+from plan import PlanTableModel
+from tasklist import TasklistTableModel
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     aboutDialogRequested = pyqtSignal()
@@ -30,11 +28,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().__init__(*args, **kwargs)
         self.application = application
         self.setupUi(self)
+        self._setupTables(application.plan, application.tasklist)
         self._connectSignals()
         self._connectSlots()
         self._setupKeys()
-
-        self._set_up_tables(application.plan, application.tasklist)
 
     # Qt Slots/Signals
     ################################################################################
@@ -91,7 +88,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         next_index = (self.tabWidget.currentIndex() + ahead) % tab_count
         self.tabWidget.setCurrentIndex(next_index)
 
-    def _set_up_tables(self, plan, tasklist):
+    def _setupTables(self, plan_model, tasklist_model):
         # Plan
 
         self.plan_delegate = GenericDelegate(self)
@@ -100,11 +97,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.deadline_type_delegate = DeadlineTypeDelegate(self)
         self.percent_delegate = PercentDelegate(self)
 
-        headers = ["F", "R", "Start", "Name", "Length", "ActLen", "OptLen", "Percent"]
-        self.plan_model = PlanTableModel(self, plan, headers)
-        self.plan_model.dataChanged.connect(self.update_title)
-        self.table_plan.setModel(self.plan_model)
-
+        self.table_plan.setModel(plan_model)
         self.table_plan.setItemDelegate(self.plan_delegate)
         self.table_plan.setItemDelegateForColumn(0, self.bool_delegate)
         self.table_plan.setItemDelegateForColumn(1, self.bool_delegate)
@@ -115,10 +108,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Tasklist
 
-        headers = ["Priority", "Value", "Cost", "Name", "Date Added", "Deadline", "Halftime", "Deadline Type"]
-        self.tasklist_model = TasklistTableModel(self, tasklist, headers)
-        self.tasklist_model.dataChanged.connect(self.update_title)
-        self.table_tasklist.setModel(self.tasklist_model)
+        self.table_tasklist.setModel(tasklist_model)
         self.table_tasklist.setItemDelegate(self.tasklist_delegate)
         self.table_tasklist.setItemDelegateForColumn(0, self.percent_delegate)
         self.table_tasklist.setItemDelegateForColumn(7, self.deadline_type_delegate)
@@ -133,8 +123,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(f"Text query: {query}")
 
     def update_title(self):
-        activity_count = self.plan_model.rowCount(None) - 1
-        task_count = self.tasklist_model.rowCount(None)
+        activity_count = self.table_plan.model().rowCount(None) - 1
+        task_count = self.table_tasklist.model().rowCount(None)
 
         self.setWindowTitle(f"{activity_count} Activities, {task_count} Tasks - LibrePlan")
 
