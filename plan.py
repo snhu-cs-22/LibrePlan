@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QAbstractTableModel, QTime
 
 class Activity:
     def __init__(self,
-        name="Activity name",
+        name="Activity",
         length=0,
         start_time=QTime(),
         is_rigid=False,
@@ -40,13 +40,19 @@ class PlanTableModel(QAbstractTableModel):
     def set_activity(self, index, property):
         self._set_activity_property_by_column_index(index, property)
 
-    def insert_activity(self, index, activity=Activity()):
+    def insert_activity(self, index, activity):
         self._activities.insert(index, activity)
         self.calculate()
+        self.insertRow(index)
+        self.layoutChanged.emit()
 
-    def delete_activity(self, index):
-        self._activities.pop(index)
-        self.calculate()
+    def delete_activities(self, indices):
+        # List is reversed to preserve index numbers
+        for index in reversed(indices):
+            self._activities.pop(index)
+            self.calculate()
+            self.removeRow(index)
+            self.layoutChanged.emit()
 
     def move_activity(self, index, new_index):
         self._activities.insert(new_index, self._activities[index])
@@ -132,11 +138,17 @@ class PlanTableModel(QAbstractTableModel):
                 self._activities.append(activity)
 
         self.calculate()
+        self.layoutChanged.emit()
 
-    def export_activities(self, path):
+    def export_activities(self, path, indices=[]):
         with open(path, "w") as f:
+            if indices:
+                activities = [self._activities[index] for index in indices]
+            else:
+                activities = self._activities
+
             activities_properties = []
-            for activity in self._activities:
+            for activity in activities:
                 properties = {
                     "name": activity.name,
                     "length": activity.length,

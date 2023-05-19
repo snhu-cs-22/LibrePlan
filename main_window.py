@@ -3,7 +3,7 @@ from typing import Callable, Sequence, Tuple, List
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QApplication, QMainWindow, QShortcut
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut
 
 from ui.forms.main_window import Ui_MainWindow
 from item_delegates import GenericDelegate, BoolDelegate, DeadlineTypeDelegate, PercentDelegate
@@ -13,14 +13,21 @@ from tasklist import TasklistTableModel
 class MainWindow(QMainWindow, Ui_MainWindow):
     aboutDialogRequested = pyqtSignal()
     planImportRequested = pyqtSignal()
-    planExportRequested = pyqtSignal()
+    planExportRequested = pyqtSignal(bool)
     tasklistImportRequested = pyqtSignal()
-    tasklistExportRequested = pyqtSignal()
+    tasklistExportRequested = pyqtSignal(bool)
 
     planStartRequested = pyqtSignal()
     planEndRequested = pyqtSignal()
     planInterruptRequested = pyqtSignal()
     planAbortRequested = pyqtSignal()
+
+    planAppendActivity = pyqtSignal()
+    planInsertActivity = pyqtSignal()
+    planDeleteActivities = pyqtSignal()
+
+    tasklistNewTask = pyqtSignal()
+    tasklistDeleteTasks = pyqtSignal()
 
     appExitRequested = pyqtSignal()
 
@@ -40,10 +47,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Menu Actions
         self.actionAbout.triggered.connect(self.aboutDialogRequested)
         self.actionExit.triggered.connect(self.appExitRequested)
-        self.actionImport_Tasklist.triggered.connect(self.tasklistImportRequested)
-        self.actionExport_Tasklist.triggered.connect(self.tasklistExportRequested)
-        self.actionImport_Plan.triggered.connect(self.planImportRequested)
-        self.actionExport_Plan.triggered.connect(self.planExportRequested)
+        self.actionImport_Tasks.triggered.connect(self.tasklistImportRequested)
+        self.actionExport_Tasklist.triggered.connect(
+            lambda: self.tasklistExportRequested.emit(True)
+        )
+        self.actionImport_Activities.triggered.connect(self.planImportRequested)
+        self.actionExport_Plan.triggered.connect(
+            lambda: self.planExportRequested.emit(True)
+        )
+
+        self.actionAdd_New_Activity.triggered.connect(self.planAppendActivity)
+        self.actionInsert_New_Activity.triggered.connect(self.planInsertActivity)
+        self.actionExport_Selected_Activities.triggered.connect(
+            lambda: self.planExportRequested.emit(False)
+        )
+        self.actionDelete_Selected_Activities.triggered.connect(self.planDeleteActivities)
+
+        self.actionNew_Task.triggered.connect(self.tasklistNewTask)
+        self.actionExport_Selected_Tasks.triggered.connect(
+            lambda: self.tasklistExportRequested.emit(False)
+        )
+        self.actionDelete_Selected_Tasks.triggered.connect(self.tasklistDeleteTasks)
 
         # Button Actions
         self.pushButton_start.clicked.connect(self.planStartRequested)
@@ -51,8 +75,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_interrupt.clicked.connect(self.planInterruptRequested)
         self.pushButton_abort.clicked.connect(self.planAbortRequested)
 
+        self.pushButton_new_task.clicked.connect(self.tasklistNewTask)
+        self.pushButton_add_activity.clicked.connect(self.planAppendActivity)
+
         # Other widgets
         self.tasklist_filter.textEdited.connect(self.filter_tasklist)
+
+        self.table_plan.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table_plan.customContextMenuRequested.connect(self._activity_context_menu)
+        self.table_tasklist.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table_tasklist.customContextMenuRequested.connect(self._task_context_menu)
 
     def _connectSlots(self):
         self.application.countdownUpdateRequested.connect(self.update_title_countdown)
@@ -118,6 +150,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.update_title()
 
+    def get_selected_plan_indices(self):
+        return [index.row() for index in self.table_plan.selectionModel().selectedRows()]
+
+    def get_selected_tasklist_indices(self):
+        return [index.row() for index in self.table_tasklist.selectionModel().selectedRows()]
+
     def filter_tasklist(self, query):
         print("TODO: Implement tasklist filtering functionality")
         print(f"Text query: {query}")
@@ -137,3 +175,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if secs >= 0:
             return QTime(0,0,0).addSecs(secs).toString(f"{time_format}")
         return QTime(0,0,0).addSecs(-secs).toString(f"-{time_format}")
+
+    def _activity_context_menu(self, pos):
+        gpos = self.table_plan.mapToGlobal(pos)
+        menu = self.menuActivity
+        menu.exec_(gpos)
+
+    def _task_context_menu(self, pos):
+        gpos = self.table_tasklist.mapToGlobal(pos)
+        menu = self.menuTask
+        menu.exec_(gpos)

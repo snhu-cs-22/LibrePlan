@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../resources/icon.png</normaloff>../../form-move/resources/icon.png</iconset>
+    <normaloff>../../resources/icon.png</normaloff>../../resources/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -48,9 +48,6 @@
       <property name="tabShape">
        <enum>QTabWidget::Rounded</enum>
       </property>
-      <property name="currentIndex">
-       <number>1</number>
-      </property>
       <property name="elideMode">
        <enum>Qt::ElideNone</enum>
       </property>
@@ -80,6 +77,26 @@
            <number>3</number>
           </property>
           <item>
+           <widget class="QPushButton" name="pushButton_add_activity">
+            <property name="text">
+             <string>&amp;Add Activity</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="horizontalSpacer">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushButton_start">
             <property name="text">
              <string>&amp;Start</string>
@@ -103,22 +120,9 @@
           <item>
            <widget class="QPushButton" name="pushButton_abort">
             <property name="text">
-             <string>&amp;Abort</string>
+             <string>A&amp;bort</string>
             </property>
            </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
          </layout>
         </item>
@@ -215,10 +219,10 @@
     </property>
     <addaction name="actionNew_Plan"/>
     <addaction name="separator"/>
-    <addaction name="actionImport_Plan"/>
+    <addaction name="actionImport_Activities"/>
     <addaction name="actionExport_Plan"/>
     <addaction name="separator"/>
-    <addaction name="actionImport_Tasklist"/>
+    <addaction name="actionImport_Tasks"/>
     <addaction name="actionExport_Tasklist"/>
     <addaction name="separator"/>
     <addaction name="actionExit"/>
@@ -239,26 +243,43 @@
      <string>&amp;Edit</string>
     </property>
    </widget>
-   <widget class="QMenu" name="menuTask">
+   <widget class="QMenu" name="menuTasklist">
     <property name="title">
      <string>T&amp;asklist</string>
     </property>
-    <addaction name="actionNew_Task"/>
+    <widget class="QMenu" name="menuTask">
+     <property name="title">
+      <string>&amp;Task</string>
+     </property>
+     <addaction name="actionNew_Task"/>
+     <addaction name="actionExport_Selected_Tasks"/>
+     <addaction name="separator"/>
+     <addaction name="actionDelete_Selected_Tasks"/>
+    </widget>
+    <addaction name="menuTask"/>
     <addaction name="separator"/>
-    <addaction name="actionExport_Tasks_2"/>
    </widget>
-   <widget class="QMenu" name="menuActivity">
+   <widget class="QMenu" name="menuPlan">
     <property name="title">
      <string>&amp;Plan</string>
     </property>
-    <addaction name="actionNew_Activity"/>
+    <widget class="QMenu" name="menuActivity">
+     <property name="title">
+      <string>&amp;Activity</string>
+     </property>
+     <addaction name="actionAdd_New_Activity"/>
+     <addaction name="actionInsert_New_Activity"/>
+     <addaction name="actionExport_Selected_Activities"/>
+     <addaction name="separator"/>
+     <addaction name="actionDelete_Selected_Activities"/>
+    </widget>
+    <addaction name="menuActivity"/>
     <addaction name="separator"/>
-    <addaction name="actionExport_Activities"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
-   <addaction name="menuActivity"/>
-   <addaction name="menuTask"/>
+   <addaction name="menuPlan"/>
+   <addaction name="menuTasklist"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -281,9 +302,9 @@
     <string>&amp;Export Plan...</string>
    </property>
   </action>
-  <action name="actionImport_Plan">
+  <action name="actionImport_Activities">
    <property name="text">
-    <string>&amp;Import Plan...</string>
+    <string>&amp;Import Activities...</string>
    </property>
   </action>
   <action name="actionExit">
@@ -294,9 +315,9 @@
     <string notr="true">Ctrl+Q</string>
    </property>
   </action>
-  <action name="actionImport_Tasklist">
+  <action name="actionImport_Tasks">
    <property name="text">
-    <string>I&amp;mport Tasklist...</string>
+    <string>I&amp;mport Tasks...</string>
    </property>
   </action>
   <action name="actionExport_Tasklist">
@@ -306,22 +327,69 @@
   </action>
   <action name="actionNew_Task">
    <property name="text">
-    <string>New Task</string>
+    <string>&amp;New Task</string>
    </property>
   </action>
-  <action name="actionNew_Activity">
+  <action name="actionAdd_New_Activity">
    <property name="text">
-    <string>New Activity</string>
+    <string>&amp;Add New Activity</string>
    </property>
   </action>
-  <action name="actionExport_Activities">
+  <action name="actionExport_Selected_Activities">
    <property name="text">
-    <string>Export Activities...</string>
+    <string>&amp;Export Selected...</string>
    </property>
   </action>
-  <action name="actionExport_Tasks_2">
+  <action name="actionExport_Selected_Tasks">
    <property name="text">
-    <string>Export Tasks...</string>
+    <string>&amp;Export Selected...</string>
+   </property>
+  </action>
+  <action name="actionStart">
+   <property name="text">
+    <string>&amp;Start</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+R</string>
+   </property>
+  </action>
+  <action name="actionEnd">
+   <property name="text">
+    <string>&amp;Finish</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+E</string>
+   </property>
+  </action>
+  <action name="actionInterrupt">
+   <property name="text">
+    <string>&amp;Interrupt</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+I</string>
+   </property>
+  </action>
+  <action name="actionAbort">
+   <property name="text">
+    <string>&amp;Abort</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+B</string>
+   </property>
+  </action>
+  <action name="actionDelete_Selected_Activities">
+   <property name="text">
+    <string>&amp;Delete Selected</string>
+   </property>
+  </action>
+  <action name="actionDelete_Selected_Tasks">
+   <property name="text">
+    <string>&amp;Delete Selected</string>
+   </property>
+  </action>
+  <action name="actionInsert_New_Activity">
+   <property name="text">
+    <string>&amp;Insert New Activity</string>
    </property>
   </action>
  </widget>

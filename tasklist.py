@@ -94,13 +94,20 @@ class TasklistTableModel(QAbstractTableModel):
     def set_task(self, index, property):
         self._set_task_property_by_column_index(index, property)
 
-    def add_task(self, task=Task()):
+    def add_task(self, task):
         today = QDate.currentDate()
         task.calculate_priority(today)
         self._tasks.append(task)
+        self.insertRow(self.rowCount(None))
+        self.layoutChanged.emit()
 
-    def delete_task(self, index=0):
-        self._tasks.pop(index)
+    def delete_tasks(self, indices):
+        # List is reversed to preserve index numbers
+        for index in reversed(indices):
+            self._tasks.pop(index)
+            model_index = self.createIndex(index, 0)
+            self.removeRow(index, model_index)
+            self.layoutChanged.emit()
 
     def clear(self):
         self._tasks = []
@@ -134,11 +141,17 @@ class TasklistTableModel(QAbstractTableModel):
                 self._tasks.append(task)
 
         self.calculate()
+        self.layoutChanged.emit()
 
-    def export_tasks(self, path):
+    def export_tasks(self, path, indices=[]):
         with open(path, "w") as f:
+            if indices:
+                tasks = [self._tasks[index] for index in indices]
+            else:
+                tasks = self._tasks
+
             tasks_properties = []
-            for task in self._tasks:
+            for task in tasks:
                 properties = {}
 
                 properties["name"] = task.name

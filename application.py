@@ -4,8 +4,8 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox, QShortcut
 
 from main_window import MainWindow
-from plan import PlanTableModel
-from tasklist import TasklistTableModel
+from plan import PlanTableModel, Activity
+from tasklist import TasklistTableModel, Task
 
 class Application(QApplication):
     PATH_APPDATA = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation) + "/LibrePlan"
@@ -58,15 +58,26 @@ class Application(QApplication):
     def _connectSlots(self):
         # Main window
         self.main_window.aboutDialogRequested.connect(self.show_about_dialog)
-        self.main_window.planImportRequested.connect(self.import_plan_dialog)
-        self.main_window.planExportRequested.connect(self.export_plan_dialog)
-        self.main_window.tasklistImportRequested.connect(self.import_tasklist_dialog)
-        self.main_window.tasklistExportRequested.connect(self.export_tasklist_dialog)
+        self.main_window.planImportRequested.connect(self.import_activities_dialog)
+        self.main_window.planExportRequested.connect(self.export_activities_dialog)
+        self.main_window.tasklistImportRequested.connect(self.import_tasks_dialog)
+        self.main_window.tasklistExportRequested.connect(self.export_tasks_dialog)
 
         self.main_window.planStartRequested.connect(self.plan_start)
         self.main_window.planEndRequested.connect(self.plan_end)
         self.main_window.planInterruptRequested.connect(self.plan_interrupt)
         self.main_window.planAbortRequested.connect(self.plan_abort)
+
+        self.main_window.planAppendActivity.connect(
+            lambda: self.new_activity(True)
+        )
+        self.main_window.planInsertActivity.connect(
+            lambda: self.new_activity(False)
+        )
+        self.main_window.planDeleteActivities.connect(self.delete_activities)
+
+        self.main_window.tasklistNewTask.connect(self.new_task)
+        self.main_window.tasklistDeleteTasks.connect(self.delete_tasks)
 
         self.main_window.appExitRequested.connect(self.exit_app)
 
@@ -96,14 +107,14 @@ class Application(QApplication):
         if dialog == QMessageBox.Yes:
             self.plan_end()
 
-    def import_tasklist_dialog(self):
+    def import_tasks_dialog(self):
         path = QFileDialog.getOpenFileName(None, "Import Tasks")[0]
 
         if path:
             if self.tasklist.rowCount(self) != 0:
                 replace = QMessageBox.warning(
-                            None, None,
-                            "There are tasks currently in this list. Replace?",
+                            self.main_window, "Replace Tasks?",
+                            "There are tasks currently in this list.\n\nWould you like to replace them with what you've imported?",
                             QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
                         )
 
@@ -114,20 +125,24 @@ class Application(QApplication):
             else:
                 self.tasklist.import_tasks(path)
 
-    def export_tasklist_dialog(self):
+    def export_tasks_dialog(self, export_all):
         path = QFileDialog.getSaveFileName(None, "Export Tasks")[0]
 
         if path:
-            self.tasklist.export_tasks(path)
+            if export_all:
+                self.tasklist.export_tasks(path)
+            else:
+                selected_indices = self.main_window.get_selected_tasklist_indices()
+                self.tasklist.export_tasks(path, selected_indices)
 
-    def import_plan_dialog(self):
-        path = QFileDialog.getOpenFileName(None, "Import Plan")[0]
+    def import_activities_dialog(self):
+        path = QFileDialog.getOpenFileName(None, "Import Activities")[0]
 
         if path:
             if self.plan.rowCount(self) != 0:
                 replace = QMessageBox.warning(
-                            None, None,
-                            "There are activities in the current plan. Replace?",
+                            self.main_window, "Replace Activities?",
+                            "There are activities in the current plan.\n\nWould you like to replace them with what you've imported?",
                             QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
                         )
 
@@ -138,11 +153,15 @@ class Application(QApplication):
             else:
                 self.plan.import_activities(path)
 
-    def export_plan_dialog(self):
-        path = QFileDialog.getSaveFileName(None, "Export Plan")[0]
+    def export_activities_dialog(self, export_all):
+        path = QFileDialog.getSaveFileName(None, "Export Activities")[0]
 
         if path:
-            self.plan.export_activities(path)
+            if export_all:
+                self.plan.export_activities(path)
+            else:
+                selected_indices = self.main_window.get_selected_plan_indices()
+                self.plan.export_activities(path, selected_indices)
 
     # Program functions
     ################################################################################
@@ -180,6 +199,32 @@ class Application(QApplication):
         self.timer_countdown.stop()
         self.timer_activity_end.stop()
         self.send_window_title_update_signal()
+
+    # Model handling
+    ################################################################################
+
+    def new_activity(self, append):
+        selected_indices = self.main_window.get_selected_plan_indices()
+        if len(selected_indices) == 0:
+            insertion_point = self.plan.rowCount(None)
+        elif append:
+            insertion_point = selected_indices[0] + 1
+        else:
+            insertion_point = selected_indices[0]
+        self.plan.insert_activity(insertion_point, Activity())
+
+    def delete_activities(self):
+        selected_indices = self.main_window.get_selected_plan_indices()
+        if selected_indices:
+            self.plan.delete_activities(selected_indices)
+
+    def new_task(self):
+        self.tasklist.add_task(Task())
+
+    def delete_tasks(self):
+        selected_indices = self.main_window.get_selected_tasklist_indices()
+        if selected_indices:
+            self.tasklist.delete_tasks(selected_indices)
 
     # App exit
     ################################################################################
