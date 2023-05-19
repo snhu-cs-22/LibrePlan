@@ -56,6 +56,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             lambda: self.planExportRequested.emit(True)
         )
 
+        self.actionStart.triggered.connect(self.planStartRequested)
+        self.actionEnd.triggered.connect(self.planEndRequested)
+        self.actionInterrupt.triggered.connect(self.planInterruptRequested)
+        self.actionAbort.triggered.connect(self.planAbortRequested)
+
         self.actionAdd_New_Activity.triggered.connect(self.planAppendActivity)
         self.actionInsert_New_Activity.triggered.connect(self.planInsertActivity)
         self.actionExport_Selected_Activities.triggered.connect(
@@ -92,11 +97,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _setupKeys(self):
         globalShortcuts = [
-            ("Ctrl+R", self.planStartRequested.emit),
-            ("Ctrl+E", self.planEndRequested.emit),
-            ("Ctrl+I", self.planInterruptRequested.emit),
-            ("Ctrl+B", self.planAbortRequested.emit),
-
             ("Ctrl+Tab", lambda: self.cycle_tabs(1)),
             ("Ctrl+Shift+Tab", lambda: self.cycle_tabs(-1)),
         ]

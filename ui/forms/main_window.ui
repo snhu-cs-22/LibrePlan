@@ -275,6 +275,10 @@
     </widget>
     <addaction name="menuActivity"/>
     <addaction name="separator"/>
+    <addaction name="actionStart"/>
+    <addaction name="actionEnd"/>
+    <addaction name="actionInterrupt"/>
+    <addaction name="actionAbort"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
