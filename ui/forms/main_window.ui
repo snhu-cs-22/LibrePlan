@@ -256,8 +256,14 @@
      <addaction name="separator"/>
      <addaction name="actionDelete_Selected_Tasks"/>
     </widget>
+    <widget class="QMenu" name="menuTasklist_Show_Hide_Columns">
+     <property name="title">
+      <string>Show/Hide &amp;Columns</string>
+     </property>
+    </widget>
     <addaction name="menuTask"/>
     <addaction name="separator"/>
+    <addaction name="menuTasklist_Show_Hide_Columns"/>
    </widget>
    <widget class="QMenu" name="menuPlan">
     <property name="title">
@@ -273,12 +279,19 @@
      <addaction name="separator"/>
      <addaction name="actionDelete_Selected_Activities"/>
     </widget>
+    <widget class="QMenu" name="menuPlan_Show_Hide_Columns">
+     <property name="title">
+      <string>Show/Hide &amp;Columns</string>
+     </property>
+    </widget>
     <addaction name="menuActivity"/>
     <addaction name="separator"/>
     <addaction name="actionStart"/>
     <addaction name="actionEnd"/>
     <addaction name="actionInterrupt"/>
     <addaction name="actionAbort"/>
+    <addaction name="separator"/>
+    <addaction name="menuPlan_Show_Hide_Columns"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>

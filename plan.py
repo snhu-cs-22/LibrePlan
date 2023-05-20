@@ -217,7 +217,7 @@ class PlanTableModel(QAbstractTableModel):
             return self._get_activity_property_by_column_index(activity, index.column())
         return None
 
-    def headerData(self, column, orientation, role):
+    def headerData(self, column, orientation=Qt.Horizontal, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return self._header[column]
         return None

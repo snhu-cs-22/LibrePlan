@@ -1,7 +1,7 @@
 from typing import Callable, Sequence, Tuple, List
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QTime, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut
 
@@ -87,9 +87,37 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tasklist_filter.textEdited.connect(self.filter_tasklist)
 
         self.table_plan.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.table_plan.customContextMenuRequested.connect(self._activity_context_menu)
+        self.table_plan.customContextMenuRequested.connect(
+            lambda pos: self._show_context_menu(
+                self.table_plan,
+                self.menuActivity,
+                pos
+            )
+        )
         self.table_tasklist.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.table_tasklist.customContextMenuRequested.connect(self._task_context_menu)
+        self.table_tasklist.customContextMenuRequested.connect(
+            lambda pos: self._show_context_menu(
+                self.table_tasklist,
+                self.menuTask,
+                pos
+            )
+        )
+        self.table_plan.horizontalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table_plan.horizontalHeader().customContextMenuRequested.connect(
+            lambda pos: self._show_context_menu(
+                self.table_plan,
+                self.menuPlan_Show_Hide_Columns,
+                pos
+            )
+        )
+        self.table_tasklist.horizontalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table_tasklist.horizontalHeader().customContextMenuRequested.connect(
+            lambda pos: self._show_context_menu(
+                self.table_tasklist,
+                self.menuTasklist_Show_Hide_Columns,
+                pos
+            )
+        )
 
     def _connectSlots(self):
         self.application.countdownUpdateRequested.connect(self.update_title_countdown)
@@ -137,6 +165,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.table_plan.resizeColumnsToContents()
         self.table_plan.horizontalHeader().setSectionsMovable(True)
+        self._populate_header_context_menu(self.table_plan, self.menuPlan_Show_Hide_Columns)
 
         # Tasklist
 
@@ -147,6 +176,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.table_tasklist.resizeColumnsToContents()
         self.table_tasklist.horizontalHeader().setSectionsMovable(True)
+        self._populate_header_context_menu(self.table_tasklist, self.menuTasklist_Show_Hide_Columns)
 
         self.update_title()
 
@@ -176,12 +206,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             return QTime(0,0,0).addSecs(secs).toString(f"{time_format}")
         return QTime(0,0,0).addSecs(-secs).toString(f"-{time_format}")
 
-    def _activity_context_menu(self, pos):
-        gpos = self.table_plan.mapToGlobal(pos)
-        menu = self.menuActivity
+    def _show_context_menu(self, obj, menu, pos):
+        gpos = obj.mapToGlobal(pos)
         menu.exec_(gpos)
 
-    def _task_context_menu(self, pos):
-        gpos = self.table_tasklist.mapToGlobal(pos)
-        menu = self.menuTask
-        menu.exec_(gpos)
+    def _populate_header_context_menu(self, table_view, menu):
+        table_model = table_view.model()
+        for i in range(table_model.columnCount(None)):
+            action = menu.addAction(table_model.headerData(i))
+            action.setCheckable(True)
+            action.setChecked(not table_view.isColumnHidden(i))
+            action.toggled.connect(
+                lambda checked, i=i, table_view=table_view:
+                    self._toggle_column_visibility(table_view, i, checked)
+            )
+
+    def _toggle_column_visibility(self, table_view, column, checked):
+        if checked:
+            table_view.showColumn(column)
+        else:
+            table_view.hideColumn(column)
