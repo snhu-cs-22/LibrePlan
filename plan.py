@@ -24,7 +24,7 @@ class Activity:
         if self.length != 0:
                 return self.actual_length / self.length
         else:
-                return 0
+                return 0.0
 
 class PlanTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
