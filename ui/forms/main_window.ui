@@ -277,6 +277,8 @@
      <addaction name="actionInsert_New_Activity"/>
      <addaction name="actionExport_Selected_Activities"/>
      <addaction name="separator"/>
+     <addaction name="actionStart_Plan_from_Selected"/>
+     <addaction name="separator"/>
      <addaction name="actionDelete_Selected_Activities"/>
     </widget>
     <widget class="QMenu" name="menuPlan_Show_Hide_Columns">
@@ -407,6 +409,11 @@
   <action name="actionInsert_New_Activity">
    <property name="text">
     <string>&amp;Insert New Activity</string>
+   </property>
+  </action>
+  <action name="actionStart_Plan_from_Selected">
+   <property name="text">
+    <string>&amp;Start Plan from Selected</string>
    </property>
   </action>
  </widget>

@@ -18,6 +18,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     tasklistExportRequested = pyqtSignal(bool)
 
     planStartRequested = pyqtSignal()
+    planStartFromSelectedRequested = pyqtSignal()
     planEndRequested = pyqtSignal()
     planInterruptRequested = pyqtSignal()
     planAbortRequested = pyqtSignal()
@@ -57,6 +58,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
 
         self.actionStart.triggered.connect(self.planStartRequested)
+        self.actionStart_Plan_from_Selected.triggered.connect(self.planStartFromSelectedRequested)
         self.actionEnd.triggered.connect(self.planEndRequested)
         self.actionInterrupt.triggered.connect(self.planInterruptRequested)
         self.actionAbort.triggered.connect(self.planAbortRequested)

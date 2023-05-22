@@ -66,6 +66,7 @@ class Application(QApplication):
         self.main_window.tasklistExportRequested.connect(self.export_tasks_dialog)
 
         self.main_window.planStartRequested.connect(self.plan_start)
+        self.main_window.planStartFromSelectedRequested.connect(self.plan_start_from_selected)
         self.main_window.planEndRequested.connect(self.plan_end)
         self.main_window.planInterruptRequested.connect(self.plan_interrupt)
         self.main_window.planAbortRequested.connect(self.plan_abort)
@@ -195,6 +196,12 @@ class Application(QApplication):
         self.timer_countdown.start(490)
 
         self.send_window_title_update_signal()
+
+    def plan_start_from_selected(self):
+        selected_indices = self.main_window.get_selected_plan_indices()
+        if selected_indices:
+            self.plan.set_current_activity_index(selected_indices[0])
+            self.plan_start(False)
 
     def plan_end(self):
         if self.timer_countdown.isActive():
