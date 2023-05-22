@@ -122,6 +122,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _connectSlots(self):
         self.application.countdownUpdateRequested.connect(self.update_title_countdown)
         self.application.titleUpdateRequested.connect(self.update_title)
+        self.application.planCompleted.connect(self._on_plan_completed)
 
     def _setupKeys(self):
         globalShortcuts = [
@@ -205,6 +206,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if secs >= 0:
             return QTime(0,0,0).addSecs(secs).toString(f"{time_format}")
         return QTime(0,0,0).addSecs(-secs).toString(f"-{time_format}")
+
+    def _on_plan_completed(self):
+        self.tabWidget.setCurrentIndex(0)
 
     def _show_context_menu(self, obj, menu, pos):
         gpos = obj.mapToGlobal(pos)

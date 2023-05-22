@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import QStandardPaths, QTimer, QTime, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QStandardPaths, QTimer, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QApplication, QFileDialog, QMessageBox, QShortcut
+from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox, QLineEdit
 
 from main_window import MainWindow
 from plan import PlanTableModel, Activity
@@ -14,6 +14,7 @@ class Application(QApplication):
 
     countdownUpdateRequested = pyqtSignal(int)
     titleUpdateRequested = pyqtSignal()
+    planCompleted = pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -25,6 +26,7 @@ class Application(QApplication):
         self.timer_activity_end = QTimer()
         self.timer_activity_end.setSingleShot(True)
         self.timer_countdown = QTimer()
+        self.countdown_to = QTime()
 
         self.main_window = MainWindow(self)
 
@@ -95,14 +97,17 @@ class Application(QApplication):
         QMessageBox.about(self.main_window, "About LibrePlan", text)
 
     def activity_end_dialog(self):
-        """Alert user that the activity is ended"""
-
-        # Bring main window to front
-        self.main_window.setWindowState(self.main_window.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
+        # Bring main window to front and make the application's taskbar item flash orange
+        self.main_window.setWindowState(self.main_window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
         self.main_window.activateWindow()
-
         self.alert(self.main_window)
-        dialog = QMessageBox.question(self.main_window, "End of activity", "Time's up for activity: [PLACEHOLDER], end now?")
+
+        current_actvity_name = self.plan.get_current_activity().name
+        dialog = QMessageBox.question(
+                    self.main_window,
+                    f"End of activity \"{current_actvity_name}\"",
+                    f"Time's up for activity \"{current_actvity_name},\" end now?"
+                )
 
         if dialog == QMessageBox.Yes:
             self.plan_end()
@@ -163,7 +168,7 @@ class Application(QApplication):
                 selected_indices = self.main_window.get_selected_plan_indices()
                 self.plan.export_activities(path, selected_indices)
 
-    # Program functions
+    # Plan functionality
     ################################################################################
 
     def send_window_title_update_signal(self):
@@ -173,29 +178,49 @@ class Application(QApplication):
             self.titleUpdateRequested.emit()
 
     def _time_remaining(self):
-        return QTime().currentTime().secsTo(self.countdown_to)
+        if self.timer_countdown.isActive():
+            return QTime().currentTime().secsTo(self.countdown_to)
+        return 0
 
-    def plan_start(self):
-        print("Activity started")
+    def plan_start(self, preemptive=False):
+        if self.timer_activity_end.isActive():
+            self.plan_abort()
+
+        if not preemptive:
+            self.plan.set_current_activity_start_time()
 
         now = QTime.currentTime()
-        self.countdown_to = self.plan.get_activity(1).start_time
+        self.countdown_to = self.plan.get_following_activity().start_time
         self.timer_activity_end.start(now.msecsTo(self.countdown_to))
         self.timer_countdown.start(490)
 
         self.send_window_title_update_signal()
 
     def plan_end(self):
-        print("Activity ended")
-        self.timer_countdown.stop()
-        self.timer_activity_end.stop()
-        self.send_window_title_update_signal()
+        if self.timer_countdown.isActive():
+            self.timer_activity_end.stop()
+            self.timer_countdown.stop()
+
+            self.plan.complete_activity()
+            self.planCompleted.emit()
+
+            self.save_data()
+            self.send_window_title_update_signal()
 
     def plan_interrupt(self):
-        print("Activity interrupted")
+        input_text, ok = QInputDialog().getText(
+                    self.main_window,
+                    "Interrupt activity...",
+                    "Set name for interruption:"
+                )
+
+        if ok and input_text:
+            self.plan.insert_interruption(input_text)
+            self.plan_end()
+
+        self.send_window_title_update_signal()
 
     def plan_abort(self):
-        print("Activity aborted")
         self.timer_countdown.stop()
         self.timer_activity_end.stop()
         self.send_window_title_update_signal()

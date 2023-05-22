@@ -30,29 +30,53 @@ class PlanTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self._activities = []
+        self._fixed_indices = []
+        self._current_activity_index = 0
         self._header = ["F", "R", "Start", "Name", "Length", "ActLen", "OptLen", "Percent"]
         self._EDITABLE_COLUMNS = [0, 1, 2, 3, 4]
         self._TIME_FORMAT = "hh:mm"
 
+    # CRUD operations
+    ################################################################################
+
     def get_activity(self, index):
         return self._activities[index]
 
-    def set_activity(self, index, property):
-        self._set_activity_property_by_column_index(index, property)
+    def get_current_activity(self):
+        return self._activities[self._current_activity_index]
+
+    def get_following_activity(self):
+        return self._activities[self._current_activity_index + 1]
 
     def insert_activity(self, index, activity):
-        self._activities.insert(index, activity)
-        self.calculate()
-        self.insertRow(index)
-        self.layoutChanged.emit()
+        if index >= self._current_activity_index:
+            self._activities.insert(index, activity)
+            self.calculate()
+            self.insertRow(index)
+            self.layoutChanged.emit()
+
+    def insert_interruption(self, interruption_name):
+        current_activity = self.get_current_activity()
+        following_activity = self.get_following_activity()
+        interruption = Activity(name=interruption_name, is_rigid=True)
+
+        now = self._get_current_time_rounded()
+        split_activity = Activity()
+        split_activity.name = current_activity.name
+        split_activity.length = now.secsTo(following_activity.start_time) // 60
+
+        insertion_index = self._current_activity_index + 1
+        self.insert_activity(insertion_index, interruption)
+        self.insert_activity(insertion_index + 1, split_activity)
 
     def delete_activities(self, indices):
         # List is reversed to preserve index numbers
         for index in reversed(indices):
-            self._activities.pop(index)
-            self.calculate()
-            self.removeRow(index)
-            self.layoutChanged.emit()
+            if index >= self._current_activity_index:
+                self._activities.pop(index)
+                self.calculate()
+                self.removeRow(index)
+                self.layoutChanged.emit()
 
     def move_activity(self, index, new_index):
         self._activities.insert(new_index, self._activities[index])
@@ -61,63 +85,6 @@ class PlanTableModel(QAbstractTableModel):
 
     def clear(self):
         self._activities = []
-
-    def calculate(self):
-        if self._activities:
-            self._set_actual_lengths()
-            self._set_optimal_lengths()
-            self._calculate_non_fixed_times()
-
-    def _calculate_optimum_factor(self, block_start, block_end):
-        """Takes the total time duration in block, excluding time taken up by rigid _activities since they can't be compressed or expanded, and divides it by the actual allowed block size"""
-
-        block_size = self._activities[block_start].start_time.secsTo(self._activities[block_end].start_time) / 60
-        block_lengths = 0
-
-        for activity in self._activities[block_start:block_end]:
-            if activity.is_rigid:
-                block_size = block_size - activity.length
-            else:
-                block_lengths = block_lengths + activity.length
-
-        if block_lengths != 0:
-            factor = block_size / block_lengths
-        else:
-            factor = 1
-
-        return factor
-
-    def _set_optimal_lengths(self):
-        factor = self._calculate_optimum_factor(0, -1)
-        for activity in self._activities:
-            if activity.is_rigid:
-                activity.optimal_length = activity.length
-            else:
-                activity.optimal_length = floor(activity.length * factor)
-
-    def _set_actual_lengths(self):
-        # Keep track of all fixed points in Plan
-        self.fixed_points = []
-        for i, activity in enumerate(self._activities):
-            if activity.is_fixed:
-                self.fixed_points.append(i)
-
-        # Use fixed points to define blocks to calculate local OptLens
-        for i in range(0, len(self.fixed_points) - 1):
-            block_start = self.fixed_points[i]
-            block_end = self.fixed_points[i + 1]
-
-            factor = self._calculate_optimum_factor(block_start, block_end)
-            for activity in self._activities[block_start:block_end]:
-                if activity.is_rigid:
-                    activity.actual_length = activity.length
-                else:
-                    activity.actual_length = floor(activity.length * factor)
-
-    def _calculate_non_fixed_times(self):
-        for i in range(1, len(self._activities) - 1):
-            if not self._activities[i].is_fixed:
-                self._activities[i].start_time = self._activities[i - 1].start_time.addSecs(self._activities[i - 1].actual_length * 60)
 
     def import_activities(self, path, replace=False):
         with open(path) as f:
@@ -172,6 +139,91 @@ class PlanTableModel(QAbstractTableModel):
             print(f"    OptLen: {activity.optimal_length}")
             print(f"    Percent: {activity.get_percent()}")
 
+    # Functionality Helper Methods
+    ################################################################################
+
+    def set_current_activity_index(self, index):
+        # The final activity marks the end of the plan, so we stop one before the end
+        final_activity_index = self.rowCount(None) - 1
+        if index < final_activity_index:
+            self._current_activity_index = index
+
+    def set_current_activity_start_time(self):
+        self.setData(
+            self.createIndex(self._current_activity_index, 2),
+            self._get_current_time_rounded()
+        )
+        self.layoutChanged.emit()
+
+    def complete_activity(self):
+        current_activity = self.get_current_activity()
+        now = self._get_current_time_rounded()
+        length = current_activity.start_time.secsTo(now) // 60
+
+        self._increment_current_activity_index()
+
+        self.setData(
+            self.createIndex(self._current_activity_index - 1, 5),
+            length
+        )
+        self.layoutChanged.emit()
+
+    def calculate(self):
+        if self._activities:
+            self._set_actual_lengths()
+            self._set_optimal_lengths()
+            self._calculate_non_fixed_times()
+
+    # Private methods
+    ################################################################################
+
+    def _calculate_optimum_factor(self, block_start, block_end):
+        """Takes the total time duration in block, excluding time taken up by rigid _activities since they can't be compressed or expanded, and divides it by the actual allowed block size"""
+
+        block_size = self._activities[block_start].start_time.secsTo(self._activities[block_end].start_time) / 60
+        block_lengths = 0
+
+        for activity in self._activities[block_start:block_end]:
+            if activity.is_rigid:
+                block_size = block_size - activity.length
+            else:
+                block_lengths = block_lengths + activity.length
+
+        if block_lengths != 0:
+            factor = block_size / block_lengths
+        else:
+            factor = 1
+
+        return factor
+
+    def _set_optimal_lengths(self):
+        factor = self._calculate_optimum_factor(0, -1)
+        for activity in self._activities:
+            if activity.is_rigid:
+                activity.optimal_length = activity.length
+            else:
+                activity.optimal_length = floor(activity.length * factor)
+
+    def _set_actual_lengths(self):
+        self._fixed_indices = [i for i, activity in enumerate(self._activities) if activity.is_fixed]
+
+        # Use fixed points after current activity to define blocks to calculate local OptLens
+        for i in range(self._current_activity_index, len(self._fixed_indices) - 1):
+            block_start = self._fixed_indices[i]
+            block_end = self._fixed_indices[i + 1]
+
+            factor = self._calculate_optimum_factor(block_start, block_end)
+            for activity in self._activities[block_start:block_end]:
+                if activity.is_rigid:
+                    activity.actual_length = activity.length
+                else:
+                    activity.actual_length = floor(activity.length * factor)
+
+    def _calculate_non_fixed_times(self):
+        for i in range(self._current_activity_index + 1, len(self._activities) - 1):
+            if not self._activities[i].is_fixed:
+                self._activities[i].start_time = self._activities[i - 1].start_time.addSecs(self._activities[i - 1].actual_length * 60)
+
     def _get_activity_property_by_column_index(self, activity, index):
         if index == 0:
             return activity.is_fixed
@@ -201,6 +253,19 @@ class PlanTableModel(QAbstractTableModel):
             activity.name = value
         elif index == 4:
             activity.length = value
+        elif index == 5:
+            activity.actual_length = value
+
+    def _get_current_time_rounded(self):
+        # TODO: Round down seconds for simplicity
+        now = QTime.currentTime()
+        now.setHMS(now.hour(), now.minute(), 0)
+        return now
+
+    def _increment_current_activity_index(self):
+        self.set_current_activity_index(
+            self._current_activity_index + 1
+        )
 
     # Qt API Implementation
     ################################################################################
@@ -233,6 +298,6 @@ class PlanTableModel(QAbstractTableModel):
             return True
 
     def flags(self, index):
-        if index.column() in self._EDITABLE_COLUMNS:
+        if index.column() in self._EDITABLE_COLUMNS and index.row() >= self._current_activity_index:
             return super().flags(index) | Qt.ItemIsEditable
         return super().flags(index)
