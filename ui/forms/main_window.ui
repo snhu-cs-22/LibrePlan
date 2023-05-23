@@ -97,9 +97,9 @@
            </spacer>
           </item>
           <item>
-           <widget class="QPushButton" name="pushButton_start">
+           <widget class="QPushButton" name="pushButton_start_now">
             <property name="text">
-             <string>&amp;Start</string>
+             <string>&amp;Start Now</string>
             </property>
            </widget>
           </item>
@@ -277,7 +277,8 @@
      <addaction name="actionInsert_New_Activity"/>
      <addaction name="actionExport_Selected_Activities"/>
      <addaction name="separator"/>
-     <addaction name="actionStart_Plan_from_Selected"/>
+     <addaction name="actionStart_Plan_Now_from_Selected"/>
+     <addaction name="actionStart_Plan_Preemptively_from_Selected"/>
      <addaction name="separator"/>
      <addaction name="actionDelete_Selected_Activities"/>
     </widget>
@@ -288,7 +289,8 @@
     </widget>
     <addaction name="menuActivity"/>
     <addaction name="separator"/>
-    <addaction name="actionStart"/>
+    <addaction name="actionStart_now"/>
+    <addaction name="actionStart_Plan_Preemptively"/>
     <addaction name="actionEnd"/>
     <addaction name="actionInterrupt"/>
     <addaction name="actionAbort"/>
@@ -364,9 +366,9 @@
     <string>&amp;Export Selected...</string>
    </property>
   </action>
-  <action name="actionStart">
+  <action name="actionStart_now">
    <property name="text">
-    <string>&amp;Start</string>
+    <string>&amp;Start Now</string>
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+R</string>
@@ -411,9 +413,22 @@
     <string>&amp;Insert New Activity</string>
    </property>
   </action>
-  <action name="actionStart_Plan_from_Selected">
+  <action name="actionStart_Plan_Now_from_Selected">
    <property name="text">
-    <string>&amp;Start Plan from Selected</string>
+    <string>&amp;Start Plan Now from Selected</string>
+   </property>
+  </action>
+  <action name="actionStart_Plan_Preemptively">
+   <property name="text">
+    <string>Start Preemptively</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+Shift+R</string>
+   </property>
+  </action>
+  <action name="actionStart_Plan_Preemptively_from_Selected">
+   <property name="text">
+    <string>Start Plan &amp;Preemptively from Selected</string>
    </property>
   </action>
  </widget>

@@ -17,8 +17,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     tasklistImportRequested = pyqtSignal()
     tasklistExportRequested = pyqtSignal(bool)
 
-    planStartRequested = pyqtSignal()
-    planStartFromSelectedRequested = pyqtSignal()
+    planStartRequested = pyqtSignal(bool)
+    planStartFromSelectedRequested = pyqtSignal(bool)
     planEndRequested = pyqtSignal()
     planInterruptRequested = pyqtSignal()
     planAbortRequested = pyqtSignal()
@@ -57,8 +57,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             lambda: self.planExportRequested.emit(True)
         )
 
-        self.actionStart.triggered.connect(self.planStartRequested)
-        self.actionStart_Plan_from_Selected.triggered.connect(self.planStartFromSelectedRequested)
+        self.actionStart_now.triggered.connect(
+            lambda: self.planStartRequested.emit(False)
+        )
+        self.actionStart_Plan_Now_from_Selected.triggered.connect(
+            lambda: self.planStartFromSelectedRequested.emit(False)
+        )
+        self.actionStart_Plan_Preemptively.triggered.connect(
+            lambda: self.planStartRequested.emit(True)
+        )
+        self.actionStart_Plan_Preemptively_from_Selected.triggered.connect(
+            lambda: self.planStartFromSelectedRequested.emit(True)
+        )
         self.actionEnd.triggered.connect(self.planEndRequested)
         self.actionInterrupt.triggered.connect(self.planInterruptRequested)
         self.actionAbort.triggered.connect(self.planAbortRequested)
@@ -77,7 +87,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionDelete_Selected_Tasks.triggered.connect(self.tasklistDeleteTasks)
 
         # Button Actions
-        self.pushButton_start.clicked.connect(self.planStartRequested)
+        self.pushButton_start_now.clicked.connect(
+            lambda: self.planStartRequested.emit(False)
+        )
         self.pushButton_end.clicked.connect(self.planEndRequested)
         self.pushButton_interrupt.clicked.connect(self.planInterruptRequested)
         self.pushButton_abort.clicked.connect(self.planAbortRequested)

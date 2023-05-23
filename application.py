@@ -197,11 +197,11 @@ class Application(QApplication):
 
         self.send_window_title_update_signal()
 
-    def plan_start_from_selected(self):
+    def plan_start_from_selected(self, preemptive=False):
         selected_indices = self.main_window.get_selected_plan_indices()
         if selected_indices:
             self.plan.set_current_activity_index(selected_indices[0])
-            self.plan_start(False)
+            self.plan_start(preemptive)
 
     def plan_end(self):
         if self.timer_countdown.isActive():
