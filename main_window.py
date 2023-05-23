@@ -60,13 +60,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionStart_now.triggered.connect(
             lambda: self.planStartRequested.emit(False)
         )
-        self.actionStart_Plan_Now_from_Selected.triggered.connect(
+        self.actionStart_Plan_from_Here_Now.triggered.connect(
             lambda: self.planStartFromSelectedRequested.emit(False)
         )
         self.actionStart_Plan_Preemptively.triggered.connect(
             lambda: self.planStartRequested.emit(True)
         )
-        self.actionStart_Plan_Preemptively_from_Selected.triggered.connect(
+        self.actionStart_Plan_from_Here_Preemptively.triggered.connect(
             lambda: self.planStartFromSelectedRequested.emit(True)
         )
         self.actionEnd.triggered.connect(self.planEndRequested)

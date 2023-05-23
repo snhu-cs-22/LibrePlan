@@ -99,7 +99,7 @@
           <item>
            <widget class="QPushButton" name="pushButton_start_now">
             <property name="text">
-             <string>&amp;Start Now</string>
+             <string>Start &amp;Now</string>
             </property>
            </widget>
           </item>
@@ -277,8 +277,8 @@
      <addaction name="actionInsert_New_Activity"/>
      <addaction name="actionExport_Selected_Activities"/>
      <addaction name="separator"/>
-     <addaction name="actionStart_Plan_Now_from_Selected"/>
-     <addaction name="actionStart_Plan_Preemptively_from_Selected"/>
+     <addaction name="actionStart_Plan_from_Here_Now"/>
+     <addaction name="actionStart_Plan_from_Here_Preemptively"/>
      <addaction name="separator"/>
      <addaction name="actionDelete_Selected_Activities"/>
     </widget>
@@ -368,7 +368,7 @@
   </action>
   <action name="actionStart_now">
    <property name="text">
-    <string>&amp;Start Now</string>
+    <string>Start &amp;Now</string>
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+R</string>
@@ -413,22 +413,22 @@
     <string>&amp;Insert New Activity</string>
    </property>
   </action>
-  <action name="actionStart_Plan_Now_from_Selected">
+  <action name="actionStart_Plan_from_Here_Now">
    <property name="text">
-    <string>&amp;Start Plan Now from Selected</string>
+    <string>Start Plan from Here &amp;Now</string>
    </property>
   </action>
   <action name="actionStart_Plan_Preemptively">
    <property name="text">
-    <string>Start Preemptively</string>
+    <string>Start &amp;Preemptively</string>
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+Shift+R</string>
    </property>
   </action>
-  <action name="actionStart_Plan_Preemptively_from_Selected">
+  <action name="actionStart_Plan_from_Here_Preemptively">
    <property name="text">
-    <string>Start Plan &amp;Preemptively from Selected</string>
+    <string>Start Plan from Here &amp;Preemptively</string>
    </property>
   </action>
  </widget>
