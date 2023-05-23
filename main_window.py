@@ -103,7 +103,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_plan.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table_plan.customContextMenuRequested.connect(
             lambda pos: self._show_context_menu(
-                self.table_plan,
+                self.table_plan.viewport(),
                 self.menuActivity,
                 pos
             )
@@ -111,7 +111,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_tasklist.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table_tasklist.customContextMenuRequested.connect(
             lambda pos: self._show_context_menu(
-                self.table_tasklist,
+                self.table_tasklist.viewport(),
                 self.menuTask,
                 pos
             )
