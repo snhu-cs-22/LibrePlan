@@ -84,7 +84,7 @@ class PlanTableModel(QAbstractTableModel):
         self.calculate()
 
     def clear(self):
-        self._activities = []
+        self.delete_activities(range(self.rowCount(None)))
 
     def import_activities(self, path, replace=False):
         with open(path) as f:

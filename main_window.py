@@ -12,6 +12,7 @@ from tasklist import TasklistTableModel
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     aboutDialogRequested = pyqtSignal()
+    planNewRequested = pyqtSignal()
     planImportRequested = pyqtSignal()
     planExportRequested = pyqtSignal(bool)
     tasklistImportRequested = pyqtSignal()
@@ -48,6 +49,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Menu Actions
         self.actionAbout.triggered.connect(self.aboutDialogRequested)
         self.actionExit.triggered.connect(self.appExitRequested)
+        self.actionNew_Plan.triggered.connect(self.planNewRequested)
         self.actionImport_Tasks.triggered.connect(self.tasklistImportRequested)
         self.actionExport_Tasklist.triggered.connect(
             lambda: self.tasklistExportRequested.emit(True)

@@ -315,7 +315,10 @@
   </action>
   <action name="actionNew_Plan">
    <property name="text">
-    <string>&amp;New Plan...</string>
+    <string>&amp;New Plan</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+N</string>
    </property>
   </action>
   <action name="actionExport_Plan">

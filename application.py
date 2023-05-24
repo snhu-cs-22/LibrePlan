@@ -60,6 +60,7 @@ class Application(QApplication):
     def _connectSlots(self):
         # Main window
         self.main_window.aboutDialogRequested.connect(self.show_about_dialog)
+        self.main_window.planNewRequested.connect(self.new_plan_dialog)
         self.main_window.planImportRequested.connect(self.import_activities_dialog)
         self.main_window.planExportRequested.connect(self.export_activities_dialog)
         self.main_window.tasklistImportRequested.connect(self.import_tasks_dialog)
@@ -140,6 +141,17 @@ class Application(QApplication):
             else:
                 selected_indices = self.main_window.get_selected_tasklist_indices()
                 self.tasklist.export_tasks(path, selected_indices)
+
+    def new_plan_dialog(self):
+        if self.plan.rowCount(self) != 0:
+            discard = QMessageBox.warning(
+                        self.main_window, "Discard Activities?",
+                        "There are activities in the current plan.\n\nWould you like to discard them?",
+                        QMessageBox.Ok | QMessageBox.Cancel
+                    )
+
+            if discard == QMessageBox.Ok:
+                self.plan.clear()
 
     def import_activities_dialog(self):
         path = QFileDialog.getOpenFileName(None, "Import Activities")[0]
