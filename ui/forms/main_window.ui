@@ -124,6 +124,16 @@
             </property>
            </widget>
           </item>
+          <item>
+           <widget class="QPushButton" name="pushButton_archive">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Ar&amp;chive</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </item>
         <item>
@@ -294,6 +304,7 @@
     <addaction name="actionEnd"/>
     <addaction name="actionInterrupt"/>
     <addaction name="actionAbort"/>
+    <addaction name="actionPlan_Archive"/>
     <addaction name="separator"/>
     <addaction name="menuPlan_Show_Hide_Columns"/>
    </widget>
@@ -432,6 +443,17 @@
   <action name="actionStart_Plan_from_Here_Preemptively">
    <property name="text">
     <string>Start Plan from Here &amp;Preemptively</string>
+   </property>
+  </action>
+  <action name="actionPlan_Archive">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Ar&amp;chive</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+Shift+A</string>
    </property>
   </action>
  </widget>

@@ -168,6 +168,13 @@ class PlanTableModel(QAbstractTableModel):
         )
         self.layoutChanged.emit()
 
+    def complete(self):
+        self.set_current_activity_index(0)
+
+    def is_completed(self):
+        final_activity_index = self.rowCount(None) - 2
+        return self._current_activity_index >= final_activity_index
+
     def calculate(self):
         if self._activities:
             self._set_actual_lengths()

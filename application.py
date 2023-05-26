@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt, QStandardPaths, QTimer, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox, QLineEdit
 
+from database import Database
 from main_window import MainWindow
 from plan import PlanTableModel, Activity
 from tasklist import TasklistTableModel, Task
@@ -11,11 +12,14 @@ class Application(QApplication):
     PATH_APPDATA = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation) + "/LibrePlan"
     PATH_ACTIVITY_DATA = PATH_APPDATA + "/plan.json"
     PATH_TASK_DATA = PATH_APPDATA + "/tasklist.json"
+    PATH_DB = PATH_APPDATA + "/collection.db"
 
     countdownUpdateRequested = pyqtSignal(int)
     titleUpdateRequested = pyqtSignal()
     planActivityEnded = pyqtSignal(Activity)
+    planActivityCompleted = pyqtSignal()
     planCompleted = pyqtSignal()
+    planArchived = pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,6 +27,9 @@ class Application(QApplication):
         self.plan = PlanTableModel(self)
         self.tasklist = TasklistTableModel(self)
         self.load_data()
+
+        self.db = Database()
+        self.db.connect(self.PATH_DB)
 
         self.timer_countdown = QTimer()
         self.countdown_to = QTime()
@@ -67,6 +74,7 @@ class Application(QApplication):
         self.main_window.planEndRequested.connect(self.plan_end)
         self.main_window.planInterruptRequested.connect(self.plan_interrupt)
         self.main_window.planAbortRequested.connect(self.plan_abort)
+        self.main_window.planArchiveRequested.connect(self.plan_archive)
 
         self.main_window.planAppendActivity.connect(
             lambda: self.new_activity(True)
@@ -83,6 +91,17 @@ class Application(QApplication):
 
     # Dialogs
     ################################################################################
+
+    def db_open_failed_dialog(self):
+        dialog = QMessageBox.critical(
+            self.main_window,
+            "Cannot open database",
+            "Failed to establish a connection to the database.",
+            QMessageBox.Ok
+        )
+
+        if dialog == QMessageBox.Ok:
+            self.exit_app_unexpected()
 
     def show_about_dialog(self):
         text = (
@@ -194,7 +213,10 @@ class Application(QApplication):
             self.timer_countdown.stop()
 
             self.plan.complete_activity()
-            self.planCompleted.emit()
+            self.planActivityCompleted.emit()
+            if self.plan.is_completed():
+                self.plan.complete()
+                self.planCompleted.emit()
 
             self.save_data()
             self.send_window_title_update_signal()
@@ -215,6 +237,10 @@ class Application(QApplication):
     def plan_abort(self):
         self.timer_countdown.stop()
         self.send_window_title_update_signal()
+
+    def plan_archive(self):
+        self.db.archive_plan(self.plan)
+        self.planArchived.emit()
 
     # Model handling
     ################################################################################
@@ -249,3 +275,6 @@ class Application(QApplication):
         self.save_data()
         print("Program exited successfully.")
         super().exit(0)
+
+    def exit_app_unexpected(self):
+        super.exit(1)
