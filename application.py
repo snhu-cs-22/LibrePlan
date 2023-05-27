@@ -14,6 +14,7 @@ class Application(QApplication):
 
     countdownUpdateRequested = pyqtSignal(int)
     titleUpdateRequested = pyqtSignal()
+    planActivityEnded = pyqtSignal(Activity)
     planCompleted = pyqtSignal()
 
     def __init__(self, *args, **kwargs):
@@ -50,7 +51,7 @@ class Application(QApplication):
 
     def _connectSignals(self):
         # Timers
-        self.timer_activity_end.timeout.connect(self.activity_end_dialog)
+        self.timer_activity_end.timeout.connect(self.send_activity_ended_signal)
         self.timer_countdown.timeout.connect(self.send_window_title_update_signal)
 
         # Data
@@ -97,22 +98,6 @@ class Application(QApplication):
             "</center>"
         )
         QMessageBox.about(self.main_window, "About LibrePlan", text)
-
-    def activity_end_dialog(self):
-        # Bring main window to front and make the application's taskbar item flash orange
-        self.main_window.setWindowState(self.main_window.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
-        self.main_window.activateWindow()
-        self.alert(self.main_window)
-
-        current_actvity_name = self.plan.get_current_activity().name
-        dialog = QMessageBox.question(
-                    self.main_window,
-                    f"End of activity \"{current_actvity_name}\"",
-                    f"Time's up for activity \"{current_actvity_name},\" end now?"
-                )
-
-        if dialog == QMessageBox.Yes:
-            self.plan_end()
 
     def import_tasks_dialog(self):
         path = QFileDialog.getOpenFileName(None, "Import Tasks")[0]
@@ -183,6 +168,9 @@ class Application(QApplication):
 
     # Plan functionality
     ################################################################################
+
+    def send_activity_ended_signal(self):
+        self.planActivityEnded.emit(self.plan.get_current_activity())
 
     def send_window_title_update_signal(self):
         if self.timer_countdown.isActive():

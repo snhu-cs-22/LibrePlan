@@ -1,9 +1,9 @@
 from typing import Callable, Sequence, Tuple, List
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QTime, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QEvent, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut, QSystemTrayIcon
 
 from ui.forms.main_window import Ui_MainWindow
 from item_delegates import GenericDelegate, BoolDelegate, DeadlineTypeDelegate, PercentDelegate
@@ -36,8 +36,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def __init__(self, application, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.application = application
+        self.tray_icon = QSystemTrayIcon(self)
+
         self.setupUi(self)
         self._setupTables(application.plan, application.tasklist)
+        self._setupSystemTrayIcon()
         self._connectSignals()
         self._connectSlots()
         self._setupKeys()
@@ -102,6 +105,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Other widgets
         self.tasklist_filter.textEdited.connect(self.filter_tasklist)
 
+        self.tray_icon.activated.connect(self.icon_activated)
+        self.tray_icon.messageClicked.connect(self.icon_message_clicked)
+
         self.table_plan.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table_plan.customContextMenuRequested.connect(
             lambda pos: self._show_context_menu(
@@ -138,6 +144,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _connectSlots(self):
         self.application.countdownUpdateRequested.connect(self.update_title_countdown)
         self.application.titleUpdateRequested.connect(self.update_title)
+        self.application.planActivityEnded.connect(self._message_activity_end)
         self.application.planCompleted.connect(self._on_plan_completed)
 
     def _setupKeys(self):
@@ -164,6 +171,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         tab_count = self.tabWidget.count()
         next_index = (self.tabWidget.currentIndex() + ahead) % tab_count
         self.tabWidget.setCurrentIndex(next_index)
+
+    def _setupSystemTrayIcon(self):
+        self.tray_icon.setIcon(self.windowIcon())
+        self.tray_icon.setVisible(True)
+
+        self.tray_icon_menu = QMenu(self)
+        self.tray_icon_menu.addAction(self.actionExit)
+        self.tray_icon.setContextMenu(self.tray_icon_menu)
+
+    def icon_activated(self, reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.show()
+
+    def icon_message_clicked(self):
+        self.show()
+
+    def _message_activity_end(self, current_activity):
+        self.tray_icon.showMessage(
+            f"Time's up for activity \"{current_activity.name}.\"",
+            "Click \"Finish\" to stop countdown."
+        )
 
     def _setupTables(self, plan_model, tasklist_model):
         # Plan
@@ -212,9 +240,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         task_count = self.table_tasklist.model().rowCount(None)
 
         self.setWindowTitle(f"{activity_count} Activities, {task_count} Tasks - LibrePlan")
+        self.tray_icon.setToolTip(self.windowTitle())
 
     def update_title_countdown(self, secs_to):
         self.setWindowTitle(f"{self._stringify_time_duration(secs_to)} - LibrePlan")
+        self.tray_icon.setToolTip(self.windowTitle())
 
     def _stringify_time_duration(self, secs, time_format="hh:mm:ss"):
         """Workaround for having no idea how to properly represent time *durations*"""
@@ -246,3 +276,23 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             table_view.showColumn(column)
         else:
             table_view.hideColumn(column)
+
+    # Qt API Implementation
+    ################################################################################
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.WindowStateChange:
+            if self.windowState() & Qt.WindowMinimized:
+                self.hide()
+
+    def closeEvent(self, event):
+        event.ignore()
+        self.hide()
+
+    def show(self):
+        super().show()
+        self.setWindowState(self.windowState() & ~Qt.WindowMinimized | Qt.WindowActive)
+        self.activateWindow()
+
+    def hide(self):
+        super().hide()
