@@ -395,7 +395,7 @@
   </action>
   <action name="actionAbort">
    <property name="text">
-    <string>&amp;Abort</string>
+    <string>A&amp;bort</string>
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+B</string>
