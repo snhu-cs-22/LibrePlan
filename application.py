@@ -24,8 +24,6 @@ class Application(QApplication):
         self.tasklist = TasklistTableModel(self)
         self.load_data()
 
-        self.timer_activity_end = QTimer()
-        self.timer_activity_end.setSingleShot(True)
         self.timer_countdown = QTimer()
         self.countdown_to = QTime()
 
@@ -50,11 +48,8 @@ class Application(QApplication):
     ################################################################################
 
     def _connectSignals(self):
-        # Timers
-        self.timer_activity_end.timeout.connect(self.send_activity_ended_signal)
-        self.timer_countdown.timeout.connect(self.send_window_title_update_signal)
+        self.timer_countdown.timeout.connect(self.countdown)
 
-        # Data
         self.plan.dataChanged.connect(self.titleUpdateRequested)
         self.tasklist.dataChanged.connect(self.titleUpdateRequested)
 
@@ -169,6 +164,11 @@ class Application(QApplication):
     # Plan functionality
     ################################################################################
 
+    def countdown(self):
+        self.send_window_title_update_signal()
+        if self._time_remaining() == 0:
+            self.send_activity_ended_signal()
+
     def send_activity_ended_signal(self):
         self.planActivityEnded.emit(self.plan.get_current_activity())
 
@@ -184,15 +184,13 @@ class Application(QApplication):
         return 0
 
     def plan_start(self, preemptive=False):
-        if self.timer_activity_end.isActive():
+        if self.timer_countdown.isActive():
             self.plan_abort()
 
         if not preemptive:
             self.plan.set_current_activity_start_time()
 
-        now = QTime.currentTime()
         self.countdown_to = self.plan.get_following_activity().start_time
-        self.timer_activity_end.start(now.msecsTo(self.countdown_to))
         self.timer_countdown.start(490)
 
         self.send_window_title_update_signal()
@@ -205,7 +203,6 @@ class Application(QApplication):
 
     def plan_end(self):
         if self.timer_countdown.isActive():
-            self.timer_activity_end.stop()
             self.timer_countdown.stop()
 
             self.plan.complete_activity()
@@ -229,7 +226,6 @@ class Application(QApplication):
 
     def plan_abort(self):
         self.timer_countdown.stop()
-        self.timer_activity_end.stop()
         self.send_window_title_update_signal()
 
     # Model handling
