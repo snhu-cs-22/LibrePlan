@@ -98,19 +98,7 @@ class Application(QApplication):
         path = QFileDialog.getOpenFileName(None, "Import Tasks")[0]
 
         if path:
-            if self.tasklist.rowCount(self) != 0:
-                replace = QMessageBox.warning(
-                            self.main_window, "Replace Tasks?",
-                            "There are tasks currently in this list.\n\nWould you like to replace them with what you've imported?",
-                            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
-                        )
-
-                if replace == QMessageBox.Yes:
-                    self.tasklist.import_tasks(path, True)
-                elif replace == QMessageBox.No:
-                    self.tasklist.import_tasks(path, False)
-            else:
-                self.tasklist.import_tasks(path)
+            self.tasklist.import_tasks(path)
 
     def export_tasks_dialog(self, export_all):
         path = QFileDialog.getSaveFileName(None, "Export Tasks")[0]

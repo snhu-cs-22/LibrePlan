@@ -119,11 +119,8 @@ class TasklistTableModel(QAbstractTableModel):
                 task.calculate_priority(today)
             self._tasks.sort(key = lambda task: task.priority, reverse = True)
 
-    def import_tasks(self, path, replace=False):
+    def import_tasks(self, path):
         with open(path) as f:
-            if replace:
-                self._tasks = []
-
             tasks_json = json.load(f)
 
             for task_json in tasks_json:
