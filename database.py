@@ -1,14 +1,13 @@
-from PyQt5.QtCore import QDate, QTime
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 from plan import PlanTableModel, Activity
 
 class Database:
-    def __init__(self, *args):
-        self._DATE_FORMAT = "yyyy-MM-dd"
-        self._TIME_FORMAT = "hh:mm"
-        self.connection = QSqlDatabase.addDatabase("QSQLITE")
-        self.connection.setHostName("libreplan")
+    connection = QSqlDatabase.addDatabase("QSQLITE")
+    connection.setHostName("libreplan")
+
+    DATE_FORMAT = "yyyy-MM-dd"
+    TIME_FORMAT = "hh:mm"
 
     def connect(self, db_path):
         self.connection.setDatabaseName(db_path)
@@ -19,13 +18,24 @@ class Database:
             print(f"Connection: {self.connection.lastError().text()}")
         return connected
 
-    def _execute_query(self, query):
+    def disconnect(self):
+        if self.connection.isOpen():
+            if not self.connection.close():
+                print(f"Connection: {self.connection.lastError().text()}")
+
+    @staticmethod
+    def execute_query(query):
         query_successful = query.exec_()
-        if not query_successful:
-            print(f"Query: {query.lastError().text()}")
-            self.connection.rollback()
+        if query_successful:
+            Database.connection.commit()
         else:
-            self.connection.commit()
+            q = query.executedQuery()
+            e = query.lastError()
+            print(
+                f"Query \"{q}\" failed:",
+                f"\tQuery error {e.nativeErrorCode()} ({e.type()}): {e.text()}"
+            )
+            Database.connection.rollback()
         return query_successful
 
     def _create_tables(self):
@@ -35,11 +45,11 @@ class Database:
             """
             CREATE TABLE IF NOT EXISTS "activities" (
                 "id" INTEGER PRIMARY KEY,
-                "name" TEXT UNIQUE NOT NULL CHECK (length("name") < 256)
+                "name" TEXT UNIQUE NOT NULL CHECK (length("name") < 256) DEFAULT "Activity"
             )
             """
         )
-        self._execute_query(create_table_query)
+        Database.execute_query(create_table_query)
 
         create_table_query.prepare(
             """
@@ -58,7 +68,7 @@ class Database:
             )
             """
         )
-        self._execute_query(create_table_query)
+        Database.execute_query(create_table_query)
 
     def archive_plan(self, plan):
         activity_query = QSqlQuery()
@@ -84,13 +94,13 @@ class Database:
             activity = plan.get_activity(i)
 
             activity_query.addBindValue(activity.name)
-            self._execute_query(activity_query)
+            Database.execute_query(activity_query)
 
-            log_query.bindValue(":start_time", activity.start_time.toString(self._TIME_FORMAT))
+            log_query.bindValue(":start_time", activity.start_time.toString(self.TIME_FORMAT))
             log_query.bindValue(":name", activity.name)
             log_query.bindValue(":length", activity.length)
             log_query.bindValue(":actual_length", activity.actual_length)
             log_query.bindValue(":optimal_length", activity.optimal_length)
             log_query.bindValue(":is_fixed", int(activity.is_fixed))
             log_query.bindValue(":is_rigid", int(activity.is_rigid))
-            self._execute_query(log_query)
+            Database.execute_query(log_query)

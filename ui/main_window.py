@@ -6,7 +6,7 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut, QSystemTrayIcon
 
 from ui.forms.main_window import Ui_MainWindow
-from item_delegates import GenericDelegate, BoolDelegate, DeadlineTypeDelegate, PercentDelegate
+from ui.item_delegates import GenericDelegate, BoolDelegate, DeadlineTypeDelegate, PercentDelegate
 from plan import PlanTableModel
 from tasklist import TasklistTableModel
 
@@ -28,6 +28,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     planAppendActivity = pyqtSignal()
     planInsertActivity = pyqtSignal()
     planDeleteActivities = pyqtSignal()
+
+    statsWindowRequested = pyqtSignal()
 
     tasklistNewTask = pyqtSignal()
     tasklistDeleteTasks = pyqtSignal()
@@ -80,6 +82,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionInterrupt.triggered.connect(self.planInterruptRequested)
         self.actionAbort.triggered.connect(self.planAbortRequested)
         self.actionPlan_Archive.triggered.connect(self.planArchiveRequested)
+        self.actionShow_Statistics.triggered.connect(self.statsWindowRequested)
 
         self.actionAdd_New_Activity.triggered.connect(self.planAppendActivity)
         self.actionInsert_New_Activity.triggered.connect(self.planInsertActivity)

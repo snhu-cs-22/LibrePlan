@@ -4,7 +4,8 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox, QLineEdit
 
 from database import Database
-from main_window import MainWindow
+from ui.main_window import MainWindow
+from ui.stats import StatsDialog
 from plan import PlanTableModel, Activity
 from tasklist import TasklistTableModel, Task
 
@@ -84,6 +85,8 @@ class Application(QApplication):
         )
         self.main_window.planDeleteActivities.connect(self.delete_activities)
 
+        self.main_window.statsWindowRequested.connect(self.show_stats_dialog)
+
         self.main_window.tasklistNewTask.connect(self.new_task)
         self.main_window.tasklistDeleteTasks.connect(self.delete_tasks)
 
@@ -112,6 +115,10 @@ class Application(QApplication):
             "</center>"
         )
         QMessageBox.about(self.main_window, "About LibrePlan", text)
+
+    def show_stats_dialog(self):
+        self.stats_dialog = StatsDialog(self)
+        self.stats_dialog.show()
 
     def import_tasks_dialog(self):
         path = QFileDialog.getOpenFileName(None, "Import Tasks")[0]

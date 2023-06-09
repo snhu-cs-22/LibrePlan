@@ -307,6 +307,8 @@
     <addaction name="actionPlan_Archive"/>
     <addaction name="separator"/>
     <addaction name="menuPlan_Show_Hide_Columns"/>
+    <addaction name="separator"/>
+    <addaction name="actionShow_Statistics"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
@@ -454,6 +456,11 @@
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+Shift+A</string>
+   </property>
+  </action>
+  <action name="actionShow_Statistics">
+   <property name="text">
+    <string>Show S&amp;tatistics...</string>
    </property>
   </action>
  </widget>
