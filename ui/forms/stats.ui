@@ -208,6 +208,19 @@
             </widget>
            </item>
            <item>
+            <widget class="QChartView" name="chart_view_daily_avg">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>300</height>
+              </size>
+             </property>
+             <property name="renderHints">
+              <set>QPainter::Antialiasing|QPainter::TextAntialiasing</set>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QChartView" name="chart_view_circadian">
              <property name="minimumSize">
               <size>

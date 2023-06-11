@@ -8,9 +8,10 @@ from PyQt5.QtChart import (
     QPieSeries,
 
     QBarCategoryAxis,
+    QDateTimeAxis,
     QValueAxis
 )
-from PyQt5.QtCore import Qt, QDate, QTime
+from PyQt5.QtCore import Qt, QDate, QTime, QDateTime
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QApplication, QDialog
 
@@ -38,6 +39,7 @@ class StatsDialog(QDialog, Ui_StatsDialog):
 
         self._setupPieChart()
         self._setupActivityPerfChart()
+        self._setupDailyAvgChart()
         self._setupActivityCircadianChart()
         self._plot_days_ago(0)
 
@@ -108,7 +110,9 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         chart.setTitle("Proportion of Time Spent on Activities")
 
         self.pie_series = QPieSeries()
+
         chart.addSeries(self.pie_series)
+
         self.chart_view_pie.setChart(chart)
 
     def _setupActivityPerfChart(self):
@@ -123,31 +127,76 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         # Series
         self.activity_length_series = QBarSeries()
         self.activity_percent_series = QBarSeries()
+
         chart.addSeries(self.activity_length_series)
         chart.addSeries(self.activity_percent_series)
 
         # Axes
-        self.x_axis = QBarCategoryAxis()
+        self.perf_x_axis = QBarCategoryAxis()
 
-        self.minute_axis = QValueAxis()
-        self.minute_axis.applyNiceNumbers()
-        self.minute_axis.setLabelFormat("%.0f min.")
+        self.perf_minute_axis = QValueAxis()
+        self.perf_minute_axis.applyNiceNumbers()
+        self.perf_minute_axis.setLabelFormat("%.0f min.")
 
-        self.percent_axis = QValueAxis()
-        self.percent_axis.applyNiceNumbers()
-        self.percent_axis.setLabelFormat("%.0f%%")
+        self.perf_percent_axis = QValueAxis()
+        self.perf_percent_axis.applyNiceNumbers()
+        self.perf_percent_axis.setLabelFormat("%.0f%%")
 
-        chart.addAxis(self.x_axis, Qt.AlignBottom)
-        chart.addAxis(self.minute_axis, Qt.AlignLeft)
-        chart.addAxis(self.percent_axis, Qt.AlignRight)
+        chart.addAxis(self.perf_x_axis, Qt.AlignBottom)
+        chart.addAxis(self.perf_minute_axis, Qt.AlignLeft)
+        chart.addAxis(self.perf_percent_axis, Qt.AlignRight)
 
-        self.activity_length_series.attachAxis(self.x_axis)
-        self.activity_length_series.attachAxis(self.minute_axis)
-
-        self.activity_percent_series.attachAxis(self.x_axis)
-        self.activity_percent_series.attachAxis(self.percent_axis)
+        self.activity_length_series.attachAxis(self.perf_x_axis)
+        self.activity_length_series.attachAxis(self.perf_minute_axis)
+        self.activity_percent_series.attachAxis(self.perf_x_axis)
+        self.activity_percent_series.attachAxis(self.perf_percent_axis)
 
         self.chart_view_perf.setChart(chart)
+
+    def _setupDailyAvgChart(self):
+        # Chart
+        chart = QChart()
+        chart.setAnimationOptions(QChart.SeriesAnimations)
+        chart.setAnimationDuration(500)
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(Qt.AlignBottom)
+        chart.setTitle("Daily Activity Performance")
+
+        # Series
+        self.activity_daily_length = QLineSeries()
+        self.activity_daily_length.setName("Planned Length")
+        self.activity_daily_actual_length = QLineSeries()
+        self.activity_daily_actual_length.setName("Actual Length")
+        self.activity_daily_percent = QLineSeries()
+        self.activity_daily_percent.setName("Percent")
+
+        chart.addSeries(self.activity_daily_length)
+        chart.addSeries(self.activity_daily_actual_length)
+        chart.addSeries(self.activity_daily_percent)
+
+        # Axes
+        self.daily_date_axis = QDateTimeAxis()
+
+        self.daily_minute_axis = QValueAxis()
+        self.daily_minute_axis.applyNiceNumbers()
+        self.daily_minute_axis.setLabelFormat("%.0f min.")
+
+        self.daily_percent_axis = QValueAxis()
+        self.daily_percent_axis.applyNiceNumbers()
+        self.daily_percent_axis.setLabelFormat("%.0f%%")
+
+        chart.addAxis(self.daily_date_axis, Qt.AlignBottom)
+        chart.addAxis(self.daily_minute_axis, Qt.AlignLeft)
+        chart.addAxis(self.daily_percent_axis, Qt.AlignRight)
+
+        self.activity_daily_length.attachAxis(self.daily_date_axis)
+        self.activity_daily_length.attachAxis(self.daily_minute_axis)
+        self.activity_daily_actual_length.attachAxis(self.daily_date_axis)
+        self.activity_daily_actual_length.attachAxis(self.daily_minute_axis)
+        self.activity_daily_percent.attachAxis(self.daily_date_axis)
+        self.activity_daily_percent.attachAxis(self.daily_percent_axis)
+
+        self.chart_view_daily_avg.setChart(chart)
 
     def _setupActivityCircadianChart(self):
         # Chart
@@ -161,21 +210,23 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         # Series
         self.activity_circadian_percent = QLineSeries()
         self.activity_circadian_percent.setName("Percent")
+
         chart.addSeries(self.activity_circadian_percent)
 
         # Axes
-        self.hour_axis = QValueAxis()
-        self.hour_axis.setRange(0, 24)
-        self.hour_axis.setLabelFormat("%d:00")
+        self.circadian_hour_axis = QValueAxis()
+        self.circadian_hour_axis.setRange(0, 24)
+        self.circadian_hour_axis.setLabelFormat("%d:00")
 
-        self.percent_axis_2 = QValueAxis()
-        self.percent_axis_2.applyNiceNumbers()
-        self.percent_axis_2.setLabelFormat("%.0f%%")
+        self.circadian_percent_axis = QValueAxis()
+        self.circadian_percent_axis.applyNiceNumbers()
+        self.circadian_percent_axis.setLabelFormat("%.0f%%")
 
-        chart.addAxis(self.hour_axis, Qt.AlignBottom)
-        chart.addAxis(self.percent_axis_2, Qt.AlignLeft)
-        self.activity_circadian_percent.attachAxis(self.hour_axis)
-        self.activity_circadian_percent.attachAxis(self.percent_axis_2)
+        chart.addAxis(self.circadian_hour_axis, Qt.AlignBottom)
+        chart.addAxis(self.circadian_percent_axis, Qt.AlignLeft)
+
+        self.activity_circadian_percent.attachAxis(self.circadian_hour_axis)
+        self.activity_circadian_percent.attachAxis(self.circadian_percent_axis)
 
         self.chart_view_circadian.setChart(chart)
 
@@ -184,14 +235,20 @@ class StatsDialog(QDialog, Ui_StatsDialog):
 
     def _setupQueries(self):
         self.query_activity_names = QSqlQuery()
-        self.query_activity_names.prepare('SELECT "name" FROM "activities" ORDER BY "name"')
+        self.query_activity_names.prepare(
+            'SELECT "name" FROM "activities" ORDER BY "name"'
+        )
 
         self.query_log_date_range = QSqlQuery()
-        self.query_log_date_range.prepare('SELECT MIN("date"), MAX("date") FROM "activity_log"')
+        self.query_log_date_range.prepare(
+            'SELECT MIN("date"), MAX("date") FROM "activity_log"'
+        )
 
         self.query_pie = QSqlQuery()
         self.query_perf_axis_range = QSqlQuery()
         self.query_activity_performance = QSqlQuery()
+        self.query_daily_axis_range = QSqlQuery()
+        self.query_daily_avg = QSqlQuery()
         self.query_circadian_axis_range = QSqlQuery()
         self.query_circadian_performance = QSqlQuery()
 
@@ -245,6 +302,39 @@ class StatsDialog(QDialog, Ui_StatsDialog):
             """
         )
 
+        self.query_daily_axis_range.prepare(
+            """
+            SELECT MIN(MIN("avg_actual_length"), MIN("avg_length")),
+                    MAX(MAX("avg_actual_length"), MAX("avg_length")),
+                    MIN("avg_percent"),
+                    MAX("avg_percent")
+            FROM (
+                SELECT
+                    AVG("actual_length") AS "avg_actual_length",
+                    AVG("length") AS "avg_length",
+                    AVG("actual_length" * 100/CAST("length" AS REAL)) AS "avg_percent"
+                FROM "activity_log" AS l
+                WHERE "date" BETWEEN :date_from AND :date_to
+                    AND "length" <> 0
+                GROUP BY "date"
+            )
+            """
+        )
+
+        self.query_daily_avg.prepare(
+            f"""
+            SELECT "date",
+                   AVG("actual_length"),
+                   AVG("length"),
+                   AVG("actual_length" * 100/CAST("length" AS REAL))
+            FROM "activity_log" AS l
+            WHERE "date" BETWEEN :date_from AND :date_to
+                AND "length" <> 0
+            GROUP BY "date"
+            ORDER BY "date" ASC
+            """
+        )
+
         self.query_circadian_axis_range.prepare(
             f"""
             SELECT MIN("avg_percent"),
@@ -294,8 +384,10 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         self._plot_pie_chart()
         self._plot_activity_perf_chart()
         self._plot_activity_circadian_chart()
+        self._plot_daily_avg_chart()
 
     def _plot_pie_chart(self):
+        # Clear previous chart data
         self.pie_series.clear()
 
         self.query_pie.bindValue(":date_from", self._date_from)
@@ -308,9 +400,10 @@ class StatsDialog(QDialog, Ui_StatsDialog):
             self.pie_series.append(name, total_actual_length)
 
     def _plot_activity_perf_chart(self):
+        # Clear previous chart data
         self.activity_length_series.clear()
         self.activity_percent_series.clear()
-        self.x_axis.clear()
+        self.perf_x_axis.clear()
 
         self.query_perf_axis_range.bindValue(
             ":date_from",
@@ -334,10 +427,11 @@ class StatsDialog(QDialog, Ui_StatsDialog):
             min_percent = 0
             max_percent = 0
 
-        self.minute_axis.setRange(min_actual_length, max_actual_length)
-        self.percent_axis.setRange(min_percent, max_percent)
+        self.perf_minute_axis.setRange(min_actual_length, max_actual_length)
+        self.perf_percent_axis.setRange(min_percent, max_percent)
 
-        length_set = QBarSet("Length")
+        # Create and append sets to chart
+        length_set = QBarSet("Planned Length")
         actual_length_set = QBarSet("Actual Length")
         percent_set = QBarSet("Percent")
 
@@ -351,7 +445,7 @@ class StatsDialog(QDialog, Ui_StatsDialog):
             actual_length = self.query_activity_performance.value(2)
             percent = self.query_activity_performance.value(3)
 
-            self.x_axis.append(name)
+            self.perf_x_axis.append(name)
 
             length_set.append(length)
             actual_length_set.append(actual_length)
@@ -361,7 +455,62 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         self.activity_length_series.append(actual_length_set)
         self.activity_percent_series.append(percent_set)
 
+    def _plot_daily_avg_chart(self):
+        # Clear previous chart data
+        self.activity_daily_length.clear()
+        self.activity_daily_actual_length.clear()
+        self.activity_daily_percent.clear()
+
+        self.query_daily_axis_range.bindValue(
+            ":date_from",
+            self._date_from.toString(Database.DATE_FORMAT)
+        )
+        self.query_daily_axis_range.bindValue(
+            ":date_to",
+            self._date_to.toString(Database.DATE_FORMAT)
+        )
+        Database.execute_query(self.query_daily_axis_range)
+
+        self.query_daily_axis_range.first()
+        if self.query_daily_axis_range.value(0) != "":
+            self.daily_date_axis.setRange(
+                QDateTime(self._date_from),
+                QDateTime(self._date_to)
+            )
+
+            min_minute = self.query_daily_axis_range.value(0) - 1
+            max_minute = self.query_daily_axis_range.value(1) + 1
+            min_percent = self.query_daily_axis_range.value(2) - 1
+            max_percent = self.query_daily_axis_range.value(3) + 1
+
+        else:
+            min_minute = -1
+            max_minute = 1
+            min_percent = -1
+            max_percent = 1
+
+        self.daily_minute_axis.setRange(min_minute, max_minute)
+        self.daily_percent_axis.setRange(min_percent, max_percent)
+
+        self.query_daily_avg.bindValue(":date_from", self._date_from)
+        self.query_daily_avg.bindValue(":date_to", self._date_to)
+        Database.execute_query(self.query_daily_avg)
+
+        while self.query_daily_avg.next():
+            date = QDateTime(QDate.fromString(
+                self.query_daily_avg.value(0),
+                Database.DATE_FORMAT
+            ), QTime(0,0,0))
+            actual_length = self.query_daily_avg.value(1)
+            length = self.query_daily_avg.value(2)
+            percent = self.query_daily_avg.value(3)
+
+            self.activity_daily_actual_length.append(date.toMSecsSinceEpoch(), actual_length)
+            self.activity_daily_length.append(date.toMSecsSinceEpoch(), length)
+            self.activity_daily_percent.append(date.toMSecsSinceEpoch(), percent)
+
     def _plot_activity_circadian_chart(self):
+        # Clear previous chart data
         self.activity_circadian_percent.clear()
 
         self.query_circadian_axis_range.bindValue(
@@ -382,7 +531,7 @@ class StatsDialog(QDialog, Ui_StatsDialog):
             min_percent = 0
             max_percent = 0
 
-        self.percent_axis_2.setRange(min_percent, max_percent)
+        self.circadian_percent_axis.setRange(min_percent, max_percent)
 
         self.query_circadian_performance.bindValue(":date_from", self._date_from)
         self.query_circadian_performance.bindValue(":date_to", self._date_to)
