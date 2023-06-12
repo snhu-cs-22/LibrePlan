@@ -13,7 +13,7 @@ from PyQt5.QtChart import (
 )
 from PyQt5.QtCore import Qt, QDate, QTime, QDateTime
 from PyQt5.QtSql import QSqlQuery
-from PyQt5.QtWidgets import QApplication, QDialog
+from PyQt5.QtWidgets import QApplication, QCompleter, QDialog
 
 from database import Database
 from ui.forms.stats import Ui_StatsDialog
@@ -49,6 +49,8 @@ class StatsDialog(QDialog, Ui_StatsDialog):
     ################################################################################
 
     def _connectSignals(self):
+        self.nameFilter.editingFinished.connect(self.update_plots)
+
         self.radioButtonToday.clicked.connect(
             lambda: self._plot_days_ago(0)
         )
@@ -86,6 +88,16 @@ class StatsDialog(QDialog, Ui_StatsDialog):
     ################################################################################
 
     def _setupWidgets(self):
+        # Populate name filter autocomplete with names
+        name_list = []
+        Database.execute_query(self.query_activity_names)
+        while self.query_activity_names.next():
+            name_list.append(self.query_activity_names.value(0))
+        completer = QCompleter(name_list)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchContains)
+        self.nameFilter.setCompleter(completer)
+
         # Set date limits to date edit widgets based on log data
         Database.execute_query(self.query_log_date_range)
         self.query_log_date_range.first()
@@ -261,6 +273,7 @@ class StatsDialog(QDialog, Ui_StatsDialog):
                     ON a.id = l.activity_id
             WHERE "date" BETWEEN :date_from AND :date_to
                 AND "actual_length" > 0
+                AND "name" LIKE :name
             GROUP BY "name"
             ORDER BY SUM("actual_length") DESC
             """
@@ -281,6 +294,7 @@ class StatsDialog(QDialog, Ui_StatsDialog):
                         ON a.id = l.activity_id
                 WHERE "date" BETWEEN :date_from AND :date_to
                     AND "length" <> 0
+                    AND "name" LIKE :name
                 GROUP BY "name"
             )
             """
@@ -297,6 +311,7 @@ class StatsDialog(QDialog, Ui_StatsDialog):
                     ON a.id = l.activity_id
             WHERE "date" BETWEEN :date_from AND :date_to
                 AND "length" <> 0
+                AND "name" LIKE :name
             GROUP BY "name"
             ORDER BY AVG("actual_length") DESC
             """
@@ -314,8 +329,11 @@ class StatsDialog(QDialog, Ui_StatsDialog):
                     AVG("length") AS "avg_length",
                     AVG("actual_length" * 100/CAST("length" AS REAL)) AS "avg_percent"
                 FROM "activity_log" AS l
+                    INNER JOIN "activities" AS a
+                        ON a.id = l.activity_id
                 WHERE "date" BETWEEN :date_from AND :date_to
                     AND "length" <> 0
+                    AND "name" LIKE :name
                 GROUP BY "date"
             )
             """
@@ -328,8 +346,11 @@ class StatsDialog(QDialog, Ui_StatsDialog):
                    AVG("length"),
                    AVG("actual_length" * 100/CAST("length" AS REAL))
             FROM "activity_log" AS l
+                INNER JOIN "activities" AS a
+                    ON a.id = l.activity_id
             WHERE "date" BETWEEN :date_from AND :date_to
                 AND "length" <> 0
+                AND "name" LIKE :name
             GROUP BY "date"
             ORDER BY "date" ASC
             """
@@ -343,8 +364,11 @@ class StatsDialog(QDialog, Ui_StatsDialog):
                 SELECT cast(strftime('%H', "start_time") AS INTEGER) AS "hour",
                        AVG("actual_length" * 100/CAST("length" AS REAL)) AS "avg_percent"
                 FROM "activity_log" AS l
+                    INNER JOIN "activities" AS a
+                        ON a.id = l.activity_id
                 WHERE "date" BETWEEN :date_from AND :date_to
                     AND "length" <> 0
+                    AND "name" LIKE :name
                 GROUP BY "hour"
             )
             """
@@ -355,8 +379,11 @@ class StatsDialog(QDialog, Ui_StatsDialog):
             SELECT cast(strftime('%H', "start_time") AS INTEGER) AS "hour",
                    AVG("actual_length" * 100/CAST("length" AS REAL)) AS "avg_percent"
             FROM "activity_log" AS l
+                INNER JOIN "activities" AS a
+                    ON a.id = l.activity_id
             WHERE "date" BETWEEN :date_from AND :date_to
                 AND "length" <> 0
+                AND "name" LIKE :name
             GROUP BY "hour"
             ORDER BY "hour" ASC
             """
@@ -390,6 +417,8 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         # Clear previous chart data
         self.pie_series.clear()
 
+        # Populate sets to chart
+        self.query_pie.bindValue(":name", f"%{self.nameFilter.text()}%")
         self.query_pie.bindValue(":date_from", self._date_from)
         self.query_pie.bindValue(":date_to", self._date_to)
         Database.execute_query(self.query_pie)
@@ -405,6 +434,8 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         self.activity_percent_series.clear()
         self.perf_x_axis.clear()
 
+        # Set axis range
+        self.query_perf_axis_range.bindValue(":name", f"%{self.nameFilter.text()}%")
         self.query_perf_axis_range.bindValue(
             ":date_from",
             self._date_from.toString(Database.DATE_FORMAT)
@@ -435,6 +466,7 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         actual_length_set = QBarSet("Actual Length")
         percent_set = QBarSet("Percent")
 
+        self.query_activity_performance.bindValue(":name", f"%{self.nameFilter.text()}%")
         self.query_activity_performance.bindValue(":date_from", self._date_from)
         self.query_activity_performance.bindValue(":date_to", self._date_to)
         Database.execute_query(self.query_activity_performance)
@@ -461,6 +493,8 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         self.activity_daily_actual_length.clear()
         self.activity_daily_percent.clear()
 
+        # Set axis range
+        self.query_daily_axis_range.bindValue(":name", f"%{self.nameFilter.text()}%")
         self.query_daily_axis_range.bindValue(
             ":date_from",
             self._date_from.toString(Database.DATE_FORMAT)
@@ -492,6 +526,8 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         self.daily_minute_axis.setRange(min_minute, max_minute)
         self.daily_percent_axis.setRange(min_percent, max_percent)
 
+        # Populate sets to chart
+        self.query_daily_avg.bindValue(":name", f"%{self.nameFilter.text()}%")
         self.query_daily_avg.bindValue(":date_from", self._date_from)
         self.query_daily_avg.bindValue(":date_to", self._date_to)
         Database.execute_query(self.query_daily_avg)
@@ -513,6 +549,8 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         # Clear previous chart data
         self.activity_circadian_percent.clear()
 
+        # Set axis range
+        self.query_circadian_axis_range.bindValue(":name", f"%{self.nameFilter.text()}%")
         self.query_circadian_axis_range.bindValue(
             ":date_from",
             self._date_from.toString(Database.DATE_FORMAT)
@@ -533,6 +571,8 @@ class StatsDialog(QDialog, Ui_StatsDialog):
 
         self.circadian_percent_axis.setRange(min_percent, max_percent)
 
+        # Populate sets to chart
+        self.query_circadian_performance.bindValue(":name", f"%{self.nameFilter.text()}%")
         self.query_circadian_performance.bindValue(":date_from", self._date_from)
         self.query_circadian_performance.bindValue(":date_to", self._date_to)
         Database.execute_query(self.query_circadian_performance)

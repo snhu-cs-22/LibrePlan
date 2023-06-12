@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
+    <width>823</width>
     <height>500</height>
    </rect>
   </property>
@@ -25,6 +25,22 @@
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLineEdit" name="nameFilter">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="placeholderText">
+          <string>Filter by Activity Name...</string>
+         </property>
+         <property name="clearButtonEnabled">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="QGroupBox" name="groupBox">
          <property name="title">
@@ -174,8 +190,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>761</width>
-          <height>932</height>
+          <width>784</width>
+          <height>1238</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_4">
