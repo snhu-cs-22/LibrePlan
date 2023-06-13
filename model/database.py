@@ -1,4 +1,5 @@
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
+from PyQt5.QtCore import QFile, QIODevice, QTextStream
 
 from plan import PlanTableModel, Activity
 
@@ -24,6 +25,26 @@ class Database:
                 print(f"Connection: {self.connection.lastError().text()}")
 
     @staticmethod
+    def query_from_file(path):
+        """Allows the creation of SQL queries from .sql files
+
+        Path separator must be '/'. '\' is not supported.
+
+        File specified in `path` must not contain multiple queries (i.e.,
+        separated by a ';').
+        """
+
+        file = QFile(path)
+        if not file.open(QIODevice.ReadOnly | QIODevice.Text):
+            return None
+
+        text = QTextStream(file)
+        query = QSqlQuery()
+        query.prepare(text.readAll())
+        file.close()
+        return query
+
+    @staticmethod
     def execute_query(query):
         query_successful = query.exec_()
         if query_successful:
@@ -38,57 +59,31 @@ class Database:
             Database.connection.rollback()
         return query_successful
 
+    @staticmethod
+    def execute_batch_query(query):
+        query_successful = query.execBatch()
+        if query_successful:
+            q = query.executedQuery()
+            Database.connection.commit()
+        else:
+            q = query.executedQuery()
+            e = query.lastError()
+            print(
+                f"Query \"{q}\" failed:",
+                f"\tQuery error {e.nativeErrorCode()} ({e.type()}): {e.text()}"
+            )
+            Database.connection.rollback()
+        return query_successful
+
     def _create_tables(self):
-        create_table_query = QSqlQuery()
-
-        create_table_query.prepare(
-            """
-            CREATE TABLE IF NOT EXISTS "activities" (
-                "id" INTEGER PRIMARY KEY,
-                "name" TEXT UNIQUE NOT NULL CHECK (length("name") < 256) DEFAULT "Activity"
-            )
-            """
-        )
+        create_table_query = Database.query_from_file("model/storage/create_activity_table.sql")
         Database.execute_query(create_table_query)
-
-        create_table_query.prepare(
-            """
-            CREATE TABLE IF NOT EXISTS "activity_log" (
-                "date" TEXT NOT NULL CHECK (length("date") <= 10),
-                "start_time" TEXT NOT NULL CHECK (length("start_time") <= 5),
-                "activity_id" INTEGER NOT NULL,
-                "length" INTEGER NOT NULL,
-                "actual_length" INTEGER NOT NULL,
-                "optimal_length" INTEGER NOT NULL,
-                "is_fixed" INTEGER NOT NULL CHECK ("is_fixed" IN (0, 1)),
-                "is_rigid" INTEGER NOT NULL CHECK ("is_fixed" IN (0, 1)),
-
-                PRIMARY KEY("date", "start_time", "activity_id"),
-                FOREIGN KEY("activity_id") REFERENCES activities("id")
-            )
-            """
-        )
+        create_table_query = Database.query_from_file("model/storage/create_log_table.sql")
         Database.execute_query(create_table_query)
 
     def archive_plan(self, plan):
-        activity_query = QSqlQuery()
-        log_query = QSqlQuery()
-        activity_query.prepare('INSERT OR IGNORE INTO "activities"("name") VALUES (?)')
-        log_query.prepare(
-            """
-            INSERT INTO "activity_log"
-            SELECT
-                date(),
-                :start_time,
-                "id",
-                :length,
-                :actual_length,
-                :optimal_length,
-                :is_fixed,
-                :is_rigid
-            FROM "activities" WHERE "name"=:name
-            """
-        )
+        activity_query = Database.query_from_file("model/storage/insert_into_activities.sql")
+        log_query = Database.query_from_file("model/storage/insert_into_log.sql")
 
         for i in range(plan.rowCount(None) - 1):
             activity = plan.get_activity(i)

@@ -3,7 +3,7 @@ from PyQt5.QtCore import Qt, QStandardPaths, QTimer, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox, QLineEdit
 
-from database import Database
+from model.database import Database
 from ui.main_window import MainWindow
 from ui.stats import StatsDialog
 from plan import PlanTableModel, Activity
