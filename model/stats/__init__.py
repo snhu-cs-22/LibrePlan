@@ -5,6 +5,7 @@ from PyQt5.QtChart import (
     QBarSet,
     QLineSeries,
     QPieSeries,
+    QPieSlice,
 
     QBarCategoryAxis,
     QDateTimeAxis,
@@ -231,10 +232,13 @@ class StatsModel:
         self.query_pie.bindValue(":date_to", self._date_to)
         Database.execute_query(self.query_pie)
 
+        # Slices are appended in bulk to prevent re-rendering slowdown
+        slices = []
         while self.query_pie.next():
             total_actual_length = self.query_pie.value("total_actual_length")
             name = f'{self.query_pie.value("name")} ({total_actual_length} min.)'
-            self.pie_series.append(name, total_actual_length)
+            slices.append(QPieSlice(name, total_actual_length))
+        self.pie_series.append(slices)
 
     def _plot_activity_perf_chart(self):
         # Clear previous chart data
@@ -273,17 +277,19 @@ class StatsModel:
         self.query_perf.bindValue(":date_to", self._date_to)
         Database.execute_query(self.query_perf)
 
+        # Names are appended in bulk to prevent the slowdown caused by re-rendering
+        names = []
         while self.query_perf.next():
-            name = self.query_perf.value("name")
+            names.append(self.query_perf.value("name"))
             length = self.query_perf.value("avg_length")
             actual_length = self.query_perf.value("avg_actual_length")
             percent = self.query_perf.value("avg_percent")
 
-            self.perf_x_axis.append(name)
-
             length_set.append(length)
             actual_length_set.append(actual_length)
             percent_set.append(percent)
+
+        self.perf_x_axis.append(names)
 
         self.perf_length_series.append(length_set)
         self.perf_length_series.append(actual_length_set)
