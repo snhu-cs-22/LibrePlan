@@ -5,10 +5,10 @@ from PyQt5.QtCore import Qt, QEvent, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut, QSystemTrayIcon
 
+from model.plan import PlanTableModel
+from model.tasklist import TasklistTableModel
 from ui.forms.main_window import Ui_MainWindow
 from ui.item_delegates import GenericDelegate, BoolDelegate, DeadlineTypeDelegate, PercentDelegate
-from plan import PlanTableModel
-from tasklist import TasklistTableModel
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     aboutDialogRequested = pyqtSignal()

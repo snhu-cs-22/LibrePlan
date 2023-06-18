@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QTimeEdit
 )
 
-from tasklist import DeadlineType
+from model.tasklist import DeadlineType
 
 class GenericDelegate(QStyledItemDelegate):
     """Generic delegate for the editing of build-in and Qt datatypes (int, str, QDate, etc.)"""

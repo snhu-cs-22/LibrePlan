@@ -4,10 +4,10 @@ from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox, QLineEdit
 
 from model.database import Database
+from model.plan import PlanTableModel, Activity
+from model.tasklist import TasklistTableModel, Task
 from ui.main_window import MainWindow
 from ui.stats import StatsDialog
-from plan import PlanTableModel, Activity
-from tasklist import TasklistTableModel, Task
 
 class Application(QApplication):
     PATH_APPDATA = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation) + "/LibrePlan"
