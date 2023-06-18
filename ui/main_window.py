@@ -245,8 +245,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         print(f"Text query: {query}")
 
     def update_title(self):
-        activity_count = self.table_plan.model().rowCount(None) - 1
-        task_count = self.table_tasklist.model().rowCount(None)
+        activity_count = self.table_plan.model().rowCount() - 1
+        task_count = self.table_tasklist.model().rowCount()
 
         self.setWindowTitle(f"{activity_count} Activities, {task_count} Tasks - LibrePlan")
         self.tray_icon.setToolTip(self.windowTitle())
@@ -295,7 +295,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _populate_header_context_menu(self, table_view, menu):
         table_model = table_view.model()
-        for i in range(table_model.columnCount(None)):
+        for i in range(table_model.columnCount()):
             action = menu.addAction(table_model.headerData(i))
             action.setCheckable(True)
             action.setChecked(not table_view.isColumnHidden(i))

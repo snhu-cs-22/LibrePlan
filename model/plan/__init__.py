@@ -1,7 +1,9 @@
 import json
 from math import floor
 
-from PyQt5.QtCore import Qt, QAbstractTableModel, QTime
+from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QTime
+
+from model.database import Database
 
 class Activity:
     def __init__(self,
@@ -22,9 +24,9 @@ class Activity:
 
     def get_percent(self):
         if self.length != 0:
-                return self.actual_length / self.length
+            return self.actual_length / self.length
         else:
-                return 0.0
+            return 0.0
 
 class PlanTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
@@ -84,13 +86,11 @@ class PlanTableModel(QAbstractTableModel):
         self.calculate()
 
     def clear(self):
-        self.delete_activities(range(self.rowCount(None)))
+        self.delete_activities(range(self.rowCount()))
 
-    def import_activities(self, path, replace=False):
+
+    def import_activities(self, path):
         with open(path) as f:
-            if replace:
-                self._activities = []
-
             activities_json = json.load(f)
 
             for activity_json in activities_json:
@@ -139,12 +139,31 @@ class PlanTableModel(QAbstractTableModel):
             print(f"    OptLen: {activity.optimal_length}")
             print(f"    Percent: {activity.get_percent()}")
 
+    def archive(self):
+        activity_query = Database.query_from_file("model/plan/insert_into_activities.sql")
+        log_query = Database.query_from_file("model/plan/insert_into_log.sql")
+
+        for i in range(self.rowCount() - 1):
+            activity = self._activities[i]
+
+            activity_query.bindValue(":name", activity.name)
+            Database.execute_query(activity_query)
+
+            log_query.bindValue(":start_time", activity.start_time.toString(self._TIME_FORMAT))
+            log_query.bindValue(":name", activity.name)
+            log_query.bindValue(":length", activity.length)
+            log_query.bindValue(":actual_length", activity.actual_length)
+            log_query.bindValue(":optimal_length", activity.optimal_length)
+            log_query.bindValue(":is_fixed", int(activity.is_fixed))
+            log_query.bindValue(":is_rigid", int(activity.is_rigid))
+            Database.execute_query(log_query)
+
     # Functionality Helper Methods
     ################################################################################
 
     def set_current_activity_index(self, index):
         # The final activity marks the end of the plan, so we stop one before the end
-        final_activity_index = self.rowCount(None) - 1
+        final_activity_index = self.rowCount() - 1
         if index < final_activity_index:
             self._current_activity_index = index
 
@@ -172,7 +191,7 @@ class PlanTableModel(QAbstractTableModel):
         self.set_current_activity_index(0)
 
     def is_completed(self):
-        final_activity_index = self.rowCount(None) - 2
+        final_activity_index = self.rowCount() - 2
         return self._current_activity_index >= final_activity_index
 
     def calculate(self):
@@ -185,7 +204,8 @@ class PlanTableModel(QAbstractTableModel):
     ################################################################################
 
     def _calculate_optimum_factor(self, block_start, block_end):
-        """Takes the total time duration in block, excluding time taken up by rigid _activities since they can't be compressed or expanded, and divides it by the actual allowed block size"""
+        """Calculates the amount to compress or expand a block of
+        activities to make it fit into the time allocated"""
 
         block_size = self._activities[block_start].start_time.secsTo(self._activities[block_end].start_time) / 60
         block_lengths = 0
@@ -277,10 +297,10 @@ class PlanTableModel(QAbstractTableModel):
     # Qt API Implementation
     ################################################################################
 
-    def rowCount(self, parent):
+    def rowCount(self, parent=QModelIndex):
         return len(self._activities)
 
-    def columnCount(self, parent):
+    def columnCount(self, parent=QModelIndex):
         return len(self._header)
 
     def data(self, index, role):

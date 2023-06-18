@@ -1,7 +1,7 @@
 import json
 from enum import Enum, auto
 
-from PyQt5.QtCore import Qt, QAbstractTableModel, QDate
+from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QDate
 
 class DeadlineType(Enum):
     NONE = auto()
@@ -15,6 +15,7 @@ class Task:
         name="Task",
         value=0,
         cost=1,
+        date_created=QDate.currentDate(),
         deadline=QDate(),
         deadline_type=DeadlineType.NONE,
     ):
@@ -23,19 +24,8 @@ class Task:
         self.cost = cost
 
         self.deadline_type = deadline_type
-        self.DATE_CREATED = QDate.currentDate()
-        self.set_deadline(deadline)
-
-    def set_deadline(self, deadline):
-        if deadline:
-            self.deadline = deadline
-            self.halftime = self.DATE_CREATED.addDays(self.DATE_CREATED.daysTo(self.deadline) // 2)
-
-            if self.deadline_type == DeadlineType.NONE:
-                self.deadline_type = DeadlineType.STANDARD
-        else:
-            self.deadline = QDate()
-            self.halftime = QDate()
+        self.DATE_CREATED = date_created
+        self.deadline = deadline
 
     def _select_deadline_function(self, today):
         functions = {
@@ -77,15 +67,22 @@ class Task:
             return Task._deadline_decline(today.addDays(-to_deadline), deadline, date_created)
         return 1.0
 
-    def calculate_priority(self, today):
-        self.priority = self.value / self.cost * self._select_deadline_function(today)
+    def get_priority(self, today=QDate.currentDate()):
+        if self.cost == 0:
+            return 0.0
+        return self.value / self.cost * self._select_deadline_function(today)
+
+    def get_halftime(self):
+        if self.deadline.isValid():
+            return self.DATE_CREATED.addDays(self.DATE_CREATED.daysTo(self.deadline) // 2)
+        return QDate()
 
 class TasklistTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self._tasks = []
         self._header = ["Priority", "Value", "Cost", "Name", "Date Added", "Deadline", "Halftime", "Deadline Type"]
-        self._EDITABLE_COLUMNS = [0, 1, 2, 3, 5, 7]
+        self._EDITABLE_COLUMNS = [1, 2, 3, 5, 7]
         self._DATE_FORMAT = "yyyy-MM-dd"
 
     def get_task(self, index):
@@ -95,10 +92,8 @@ class TasklistTableModel(QAbstractTableModel):
         self._set_task_property_by_column_index(index, property)
 
     def add_task(self, task):
-        today = QDate.currentDate()
-        task.calculate_priority(today)
         self._tasks.append(task)
-        self.insertRow(self.rowCount(None))
+        self.insertRow(self.rowCount())
         self.layoutChanged.emit()
 
     def delete_tasks(self, indices):
@@ -113,32 +108,24 @@ class TasklistTableModel(QAbstractTableModel):
         self._tasks = []
 
     def calculate(self):
-        today = QDate.currentDate()
         if self._tasks:
-            for task in self._tasks:
-                task.calculate_priority(today)
-            self._tasks.sort(key = lambda task: task.priority, reverse = True)
+            self._tasks.sort(key = lambda task: task.get_priority(), reverse = True)
 
     def import_tasks(self, path):
         with open(path) as f:
             tasks_json = json.load(f)
 
             for task_json in tasks_json:
-                task = Task()
-                task.name = task_json["name"]
-                task.value = task_json["value"]
-                task.cost = task_json["cost"]
-                task.DATE_CREATED = QDate.fromString(task_json["DATE_CREATED"], self._DATE_FORMAT)
-                try:
-                    task.set_deadline(QDate.fromString(task_json["deadline"], self._DATE_FORMAT))
-                    task.deadline_type = DeadlineType[task_json["deadline_type"]]
-                except:
-                    task.deadline_type = DeadlineType.NONE
+                task = Task(
+                    name=task_json["name"],
+                    value=task_json["value"],
+                    cost=task_json["cost"],
+                    date_created=QDate.fromString(task_json["DATE_CREATED"], self._DATE_FORMAT),
+                    deadline=QDate.fromString(task_json["deadline"], self._DATE_FORMAT),
+                    deadline_type=DeadlineType[task_json["deadline_type"]]
+                )
 
-                self._tasks.append(task)
-
-        self.calculate()
-        self.layoutChanged.emit()
+                self.add_task(task)
 
     def export_tasks(self, path, indices=[]):
         with open(path, "w") as f:
@@ -149,14 +136,14 @@ class TasklistTableModel(QAbstractTableModel):
 
             tasks_properties = []
             for task in tasks:
-                properties = {}
-
-                properties["name"] = task.name
-                properties["value"] = task.value
-                properties["cost"] = task.cost
-                properties["DATE_CREATED"] = task.DATE_CREATED.toString(self._DATE_FORMAT)
-                properties["deadline_type"] = task.deadline_type.name
-                properties["deadline"] = task.deadline.toString(self._DATE_FORMAT)
+                properties = {
+                    "name": task.name,
+                    "value": task.value,
+                    "cost": task.cost,
+                    "DATE_CREATED": task.DATE_CREATED.toString(self._DATE_FORMAT),
+                    "deadline_type": task.deadline_type.name,
+                    "deadline": task.deadline.toString(self._DATE_FORMAT),
+                }
 
                 tasks_properties.append(properties)
 
@@ -166,17 +153,17 @@ class TasklistTableModel(QAbstractTableModel):
     def debug_print_tasks(self):
         for task in self._tasks:
             print(f"Name: {task.name}: ")
-            print(f"    Priority: {'{:.2f}'.format(task.priority)}")
+            print(f"    Priority: {'{:.2f}'.format(task.get_priority())}")
             print(f"    Value: {task.value}")
             print(f"    Cost: {task.cost}")
             print(f"    Date Added: {task.DATE_CREATED.toString(self._DATE_FORMAT)}")
             print(f"    Deadline: {task.deadline.toString(self._DATE_FORMAT)}")
-            print(f"    Halftime: {task.halftime.toString(self._DATE_FORMAT)}")
+            print(f"    Halftime: {task.get_halftime().toString(self._DATE_FORMAT)}")
             print(f"    Deadline Type: {task.deadline_type}")
 
     def _get_task_property_by_column_index(self, task, index):
         if index == 0:
-            return task.priority
+            return task.get_priority()
         elif index == 1:
             return task.value
         elif index == 2:
@@ -188,14 +175,12 @@ class TasklistTableModel(QAbstractTableModel):
         elif index == 5:
             return task.deadline
         elif index == 6:
-            return task.halftime
+            return task.get_halftime()
         elif index == 7:
             return task.deadline_type
 
     def _set_task_property_by_column_index(self, task, index, value):
-        if index == 0:
-            task.priority = value
-        elif index == 1:
+        if index == 1:
             task.value = value
         elif index == 2:
             task.cost = value
@@ -209,10 +194,10 @@ class TasklistTableModel(QAbstractTableModel):
     # Qt API Implementation
     ################################################################################
 
-    def rowCount(self, parent):
+    def rowCount(self, parent=QModelIndex):
         return len(self._tasks)
 
-    def columnCount(self, parent):
+    def columnCount(self, parent=QModelIndex):
         return len(self._header)
 
     def data(self, index, role):

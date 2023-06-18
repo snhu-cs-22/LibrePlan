@@ -1,8 +1,6 @@
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 from PyQt5.QtCore import QFile, QIODevice, QTextStream
 
-from plan import PlanTableModel, Activity
-
 class Database:
     connection = QSqlDatabase.addDatabase("QSQLITE")
     connection.setHostName("libreplan")
@@ -80,22 +78,3 @@ class Database:
         Database.execute_query(create_table_query)
         create_table_query = Database.query_from_file("model/storage/create_log_table.sql")
         Database.execute_query(create_table_query)
-
-    def archive_plan(self, plan):
-        activity_query = Database.query_from_file("model/storage/insert_into_activities.sql")
-        log_query = Database.query_from_file("model/storage/insert_into_log.sql")
-
-        for i in range(plan.rowCount(None) - 1):
-            activity = plan.get_activity(i)
-
-            activity_query.addBindValue(activity.name)
-            Database.execute_query(activity_query)
-
-            log_query.bindValue(":start_time", activity.start_time.toString(self.TIME_FORMAT))
-            log_query.bindValue(":name", activity.name)
-            log_query.bindValue(":length", activity.length)
-            log_query.bindValue(":actual_length", activity.actual_length)
-            log_query.bindValue(":optimal_length", activity.optimal_length)
-            log_query.bindValue(":is_fixed", int(activity.is_fixed))
-            log_query.bindValue(":is_rigid", int(activity.is_rigid))
-            Database.execute_query(log_query)

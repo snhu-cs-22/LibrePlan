@@ -25,12 +25,12 @@ class Application(QApplication):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.db = Database()
+        self.db.connect(self.PATH_DB)
+
         self.plan = PlanTableModel(self)
         self.tasklist = TasklistTableModel(self)
         self.load_data()
-
-        self.db = Database()
-        self.db.connect(self.PATH_DB)
 
         self.timer_countdown = QTimer()
         self.countdown_to = QTime()
@@ -137,7 +137,7 @@ class Application(QApplication):
                 self.tasklist.export_tasks(path, selected_indices)
 
     def new_plan_dialog(self):
-        if self.plan.rowCount(self) != 0:
+        if self.plan.rowCount() != 0:
             discard = QMessageBox.warning(
                         self.main_window, "Discard Activities?",
                         "There are activities in the current plan.\n\nWould you like to discard them?",
@@ -151,7 +151,7 @@ class Application(QApplication):
         path = QFileDialog.getOpenFileName(None, "Import Activities")[0]
 
         if path:
-            if self.plan.rowCount(self) != 0:
+            if self.plan.rowCount() != 0:
                 replace = QMessageBox.warning(
                             self.main_window, "Replace Activities?",
                             "There are activities in the current plan.\n\nWould you like to replace them with what you've imported?",
@@ -159,9 +159,10 @@ class Application(QApplication):
                         )
 
                 if replace == QMessageBox.Yes:
-                    self.plan.import_activities(path, True)
+                    self.plan.clear()
+                    self.plan.import_activities(path)
                 elif replace == QMessageBox.No:
-                    self.plan.import_activities(path, False)
+                    self.plan.import_activities(path)
             else:
                 self.plan.import_activities(path)
 
@@ -246,7 +247,7 @@ class Application(QApplication):
         self.send_window_title_update_signal()
 
     def plan_archive(self):
-        self.db.archive_plan(self.plan)
+        self.plan.archive()
         self.planArchived.emit()
 
     # Model handling
@@ -255,7 +256,7 @@ class Application(QApplication):
     def new_activity(self, append):
         selected_indices = self.main_window.get_selected_plan_indices()
         if len(selected_indices) == 0:
-            insertion_point = self.plan.rowCount(None)
+            insertion_point = self.plan.rowCount()
         elif append:
             insertion_point = selected_indices[0] + 1
         else:
