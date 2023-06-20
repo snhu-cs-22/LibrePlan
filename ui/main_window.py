@@ -115,6 +115,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tray_icon.activated.connect(self.icon_activated)
         self.tray_icon.messageClicked.connect(self.icon_message_clicked)
 
+        self.table_tasklist.model().layoutChanged.connect(self.update_title)
+        self.table_plan.model().layoutChanged.connect(self.update_title)
+
         self.table_plan.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table_plan.customContextMenuRequested.connect(
             lambda pos: self._show_context_menu(
