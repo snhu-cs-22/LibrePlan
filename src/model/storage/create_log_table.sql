@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS "activity_log" (
     "actual_length" INTEGER NOT NULL,
     "optimal_length" INTEGER NOT NULL,
     "is_fixed" INTEGER NOT NULL CHECK ("is_fixed" IN (0, 1)),
-    "is_rigid" INTEGER NOT NULL CHECK ("is_fixed" IN (0, 1)),
+    "is_rigid" INTEGER NOT NULL CHECK ("is_rigid" IN (0, 1)),
 
     PRIMARY KEY("date", "start_time", "activity_id"),
     FOREIGN KEY("activity_id") REFERENCES activities("id")

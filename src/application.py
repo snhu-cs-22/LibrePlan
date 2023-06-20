@@ -6,13 +6,12 @@ from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox
 from model.database import Database
 from model.plan import PlanTableModel, Activity
 from model.tasklist import TasklistTableModel, Task
+from ui.importing import ImportDialog
 from ui.main_window import MainWindow
 from ui.stats import StatsDialog
 
 class Application(QApplication):
     PATH_APPDATA = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation) + "/LibrePlan"
-    PATH_ACTIVITY_DATA = PATH_APPDATA + "/plan.json"
-    PATH_TASK_DATA = PATH_APPDATA + "/tasklist.json"
     PATH_DB = PATH_APPDATA + "/collection.db"
 
     countdownUpdateRequested = pyqtSignal(int)
@@ -30,7 +29,6 @@ class Application(QApplication):
 
         self.plan = PlanTableModel(self)
         self.tasklist = TasklistTableModel(self)
-        self.load_data()
 
         self.timer_countdown = QTimer()
         self.countdown_to = QTime()
@@ -40,17 +38,6 @@ class Application(QApplication):
         self._connectSignals()
         self._connectSlots()
         self.main_window.show()
-
-    # State management
-    ################################################################################
-
-    def load_data(self):
-        self.plan.import_activities(self.PATH_ACTIVITY_DATA)
-        self.tasklist.import_tasks(self.PATH_TASK_DATA)
-
-    def save_data(self):
-        self.plan.export_activities(self.PATH_ACTIVITY_DATA)
-        self.tasklist.export_tasks(self.PATH_TASK_DATA)
 
     # Qt Slots/Signals
     ################################################################################
@@ -124,7 +111,7 @@ class Application(QApplication):
         path = QFileDialog.getOpenFileName(None, "Import Tasks")[0]
 
         if path:
-            self.tasklist.import_tasks(path)
+            self.import_dialog = ImportDialog(self.tasklist, path)
 
     def export_tasks_dialog(self, export_all):
         path = QFileDialog.getSaveFileName(None, "Export Tasks")[0]
@@ -151,20 +138,7 @@ class Application(QApplication):
         path = QFileDialog.getOpenFileName(None, "Import Activities")[0]
 
         if path:
-            if self.plan.rowCount() != 0:
-                replace = QMessageBox.warning(
-                            self.main_window, "Replace Activities?",
-                            "There are activities in the current plan.\n\nWould you like to replace them with what you've imported?",
-                            QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
-                        )
-
-                if replace == QMessageBox.Yes:
-                    self.plan.clear()
-                    self.plan.import_activities(path)
-                elif replace == QMessageBox.No:
-                    self.plan.import_activities(path)
-            else:
-                self.plan.import_activities(path)
+            self.import_dialog = ImportDialog(self.plan, path)
 
     def export_activities_dialog(self, export_all):
         path = QFileDialog.getSaveFileName(None, "Export Activities")[0]
@@ -226,7 +200,6 @@ class Application(QApplication):
                 self.plan.complete()
                 self.planCompleted.emit()
 
-            self.save_data()
             self.send_window_title_update_signal()
 
     def plan_interrupt(self):
@@ -280,7 +253,7 @@ class Application(QApplication):
     ################################################################################
 
     def exit_app(self):
-        self.save_data()
+        self.db.disconnect()
         print("Program exited successfully.")
         super().exit(0)
 

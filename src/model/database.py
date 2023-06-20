@@ -15,13 +15,15 @@ class Database:
         if connected:
             self._create_tables()
         else:
-            print(f"Connection: {self.connection.lastError().text()}")
+            e = self.connection.lastError()
+            print(f"Failed to connect from database: {e.nativeErrorCode()} {e.type()} {e.text()}")
         return connected
 
     def disconnect(self):
         if self.connection.isOpen():
-            if not self.connection.close():
-                print(f"Connection: {self.connection.lastError().text()}")
+            self.connection.close()
+        else:
+            print("Database connection is not open")
 
     @staticmethod
     def get_prepared_query(sql):
@@ -48,7 +50,6 @@ class Database:
     def execute_batch_query(query):
         query_successful = query.execBatch()
         if query_successful:
-            q = query.executedQuery()
             Database.connection.commit()
         else:
             q = query.executedQuery()
@@ -61,7 +62,12 @@ class Database:
         return query_successful
 
     def _create_tables(self):
-        create_table_query = Database.get_prepared_query(queries.create_activity_table)
-        Database.execute_query(create_table_query)
-        create_table_query = Database.get_prepared_query(queries.create_log_table)
-        Database.execute_query(create_table_query)
+        table_queries = [
+            Database.get_prepared_query(queries.create_plan_table),
+            Database.get_prepared_query(queries.create_tasklist_table),
+            Database.get_prepared_query(queries.create_activity_table),
+            Database.get_prepared_query(queries.create_log_table),
+        ]
+
+        for query in table_queries:
+            Database.execute_query(query)

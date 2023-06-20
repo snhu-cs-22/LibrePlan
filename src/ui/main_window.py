@@ -238,10 +238,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.update_title()
 
     def get_selected_plan_indices(self):
-        return [index.row() for index in self.table_plan.selectionModel().selectedRows()]
+        return sorted([index.row() for index in self.table_plan.selectionModel().selectedRows()])
 
     def get_selected_tasklist_indices(self):
-        return [index.row() for index in self.table_tasklist.selectionModel().selectedRows()]
+        return sorted([index.row() for index in self.table_tasklist.selectionModel().selectedRows()])
 
     def filter_tasklist(self, query):
         print("TODO: Implement tasklist filtering functionality")

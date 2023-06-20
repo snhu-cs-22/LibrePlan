@@ -1,10 +1,15 @@
 import json
 from enum import Enum, auto
 
-from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QDate
+from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QDate, QDateTime
+
+from model.database import Database
+from model.importing import ReplaceOption
+
+import model.tasklist.queries as queries
 
 class DeadlineType(Enum):
-    NONE = auto()
+    NONE = 0
     STANDARD = auto()
     DECLINE = auto()
     POSTDATE = auto()
@@ -57,6 +62,7 @@ class Task:
     COLUMN_INDICES = dict([(col["attr"], i) for i, col in enumerate(COLUMNS)])
 
     def __init__(self,
+        id=None,
         name="Task",
         value=0,
         cost=1,
@@ -64,6 +70,7 @@ class Task:
         deadline=QDate(),
         deadline_type=DeadlineType.NONE,
     ):
+        self.id = id
         self.name = name
         self.value = value
         self.cost = cost
@@ -135,49 +142,88 @@ class TasklistTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self._tasks = []
-        self._DATE_FORMAT = "yyyy-MM-dd"
+
+        self.query_count = Database.get_prepared_query(queries.count)
+        self.query_create = Database.get_prepared_query(queries.insert_task)
+        self.query_read = Database.get_prepared_query(queries.get_tasks)
+        self.query_update = Database.get_prepared_query(queries.update_task)
+        self.query_delete = Database.get_prepared_query(queries.delete_task)
+        self.query_clear = Database.get_prepared_query(queries.delete_all_tasks)
+
+        self.read_tasks()
 
     def get_task(self, index):
         return self._tasks[index]
 
-    def set_task(self, index, property):
-        self._set_task_property_by_column_index(index, property)
-
     def add_task(self, task):
-        self._tasks.append(task)
-        self.insertRow(self.rowCount())
-        self.layoutChanged.emit()
+        self.add_tasks([task])
+
+    def add_tasks(self, tasks):
+        max_id = QDateTime.currentDateTime().toMSecsSinceEpoch()
+
+        for i, task in enumerate(tasks):
+            task.id = max_id + i
+
+        self.query_create.bindValue(":id", [t.id for t in tasks])
+        self.query_create.bindValue(":name", [t.name for t in tasks])
+        self.query_create.bindValue(":value", [t.value for t in tasks])
+        self.query_create.bindValue(":cost", [t.cost for t in tasks])
+        self.query_create.bindValue(":date_created", [t.DATE_CREATED for t in tasks])
+        self.query_create.bindValue(":deadline", [t.deadline for t in tasks])
+        self.query_create.bindValue(":deadline_type", [t.deadline_type.value for t in tasks])
+        if Database.execute_batch_query(self.query_create):
+            self._tasks.extend(tasks)
+            self.calculate()
+            self.layoutChanged.emit()
 
     def delete_tasks(self, indices):
-        # List is reversed to preserve index numbers
-        for index in reversed(indices):
-            self._tasks.pop(index)
-            model_index = self.createIndex(index, 0)
-            self.removeRow(index, model_index)
-            self.layoutChanged.emit()
+        ids = [t.id for i, t in enumerate(self._tasks) if i in indices]
+        self.query_delete.bindValue(":id", ids)
+        Database.execute_batch_query(self.query_delete)
+
+        self._tasks = [t for i, t in enumerate(self._tasks) if i not in indices]
+
+        self.layoutChanged.emit()
 
     def clear(self):
         self._tasks = []
+        Database.execute_query(self.query_clear)
+        self.layoutChanged.emit()
 
     def calculate(self):
-        if self._tasks:
-            self._tasks.sort(key = lambda task: task.get_priority(), reverse = True)
+        self._tasks.sort(key = lambda task: task.get_priority(), reverse = True)
 
-    def import_tasks(self, path):
+    def read_tasks(self):
+        self._tasks = []
+        Database.execute_query(self.query_read)
+        while self.query_read.next():
+            task = self._get_task_from_db()
+            self._tasks.append(task)
+        self.calculate()
+
+    def import_tasks(self, path, replace_option):
+        if replace_option == ReplaceOption.REPLACE:
+            query_import = Database.get_prepared_query(queries.import_task_replace)
+        elif replace_option == ReplaceOption.ADD:
+            query_import = Database.get_prepared_query(queries.import_task_add)
+        else:
+            query_import = Database.get_prepared_query(queries.import_task_ignore)
+
         with open(path) as f:
             tasks_json = json.load(f)
 
-            for task_json in tasks_json:
-                task = Task(
-                    name=task_json["name"],
-                    value=task_json["value"],
-                    cost=task_json["cost"],
-                    date_created=QDate.fromString(task_json["DATE_CREATED"], self._DATE_FORMAT),
-                    deadline=QDate.fromString(task_json["deadline"], self._DATE_FORMAT),
-                    deadline_type=DeadlineType[task_json["deadline_type"]]
-                )
+            query_import.bindValue(":id", [t["id"] for t in tasks_json])
+            query_import.bindValue(":name", [t["name"] for t in tasks_json])
+            query_import.bindValue(":value", [t["value"] for t in tasks_json])
+            query_import.bindValue(":cost", [t["cost"] for t in tasks_json])
+            query_import.bindValue(":date_created", [t["DATE_CREATED"] for t in tasks_json])
+            query_import.bindValue(":deadline", [t["deadline"] for t in tasks_json])
+            query_import.bindValue(":deadline_type", [DeadlineType[t["deadline_type"]].value for t in tasks_json])
 
-                self.add_task(task)
+        Database.execute_batch_query(query_import)
+
+        self.read_tasks()
+        self.layoutChanged.emit()
 
     def export_tasks(self, path, indices=[]):
         with open(path, "w") as f:
@@ -189,12 +235,13 @@ class TasklistTableModel(QAbstractTableModel):
             tasks_properties = []
             for task in tasks:
                 properties = {
+                    "id": task.id,
                     "name": task.name,
                     "value": task.value,
                     "cost": task.cost,
-                    "DATE_CREATED": task.DATE_CREATED.toString(self._DATE_FORMAT),
+                    "DATE_CREATED": task.DATE_CREATED.toString(Database.DATE_FORMAT),
                     "deadline_type": task.deadline_type.name,
-                    "deadline": task.deadline.toString(self._DATE_FORMAT),
+                    "deadline": task.deadline.toString(Database.DATE_FORMAT),
                 }
 
                 tasks_properties.append(properties)
@@ -202,22 +249,33 @@ class TasklistTableModel(QAbstractTableModel):
             tasks_json = json.dumps(tasks_properties)
             f.write(tasks_json)
 
-    def debug_print_tasks(self):
-        for task in self._tasks:
-            print(f"Name: {task.name}: ")
-            print(f"    Priority: {'{:.2f}'.format(task.get_priority())}")
-            print(f"    Value: {task.value}")
-            print(f"    Cost: {task.cost}")
-            print(f"    Date Added: {task.DATE_CREATED.toString(self._DATE_FORMAT)}")
-            print(f"    Deadline: {task.deadline.toString(self._DATE_FORMAT)}")
-            print(f"    Halftime: {task.get_halftime().toString(self._DATE_FORMAT)}")
-            print(f"    Deadline Type: {task.deadline_type}")
+    # Private methods
+    ################################################################################
+
+    def _get_task_from_db(self):
+        return Task(
+            id=self.query_read.value("id"),
+            name=self.query_read.value("name"),
+            value=self.query_read.value("value"),
+            cost=self.query_read.value("cost"),
+            date_created=QDate.fromString(
+                self.query_read.value("date_created"),
+                Database.DATE_FORMAT
+            ),
+            deadline=QDate.fromString(
+                self.query_read.value("deadline"),
+                Database.DATE_FORMAT
+            ),
+            deadline_type=DeadlineType(self.query_read.value("deadline_type"))
+        )
 
     # Qt API Implementation
     ################################################################################
 
     def rowCount(self, parent=QModelIndex):
-        return len(self._tasks)
+        Database.execute_query(self.query_count)
+        self.query_count.first()
+        return self.query_count.value("count")
 
     def columnCount(self, parent=QModelIndex):
         return len(Task.COLUMNS)
@@ -239,6 +297,16 @@ class TasklistTableModel(QAbstractTableModel):
                 return False
             task = self._tasks[index.row()]
             task.set_attr_by_index(index.column(), value)
+
+            self.query_update.bindValue(":id", task.id)
+            self.query_update.bindValue(":name", task.name)
+            self.query_update.bindValue(":value", task.value)
+            self.query_update.bindValue(":cost", task.cost)
+            self.query_update.bindValue(":date_created", task.DATE_CREATED)
+            self.query_update.bindValue(":deadline", task.deadline)
+            self.query_update.bindValue(":deadline_type", task.deadline_type.value)
+            Database.execute_query(self.query_update)
+
             self.calculate()
             self.dataChanged.emit(index, index)
             return True

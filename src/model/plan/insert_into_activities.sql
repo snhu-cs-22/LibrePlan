@@ -1,3 +1,8 @@
 INSERT OR IGNORE
 INTO "activities"("name")
-VALUES (:name)
+SELECT "name"
+FROM "plan"
+WHERE "order" < (
+    SELECT MAX("order")
+    FROM "plan"
+)
