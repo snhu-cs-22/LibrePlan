@@ -118,6 +118,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_tasklist.model().layoutChanged.connect(self.update_title)
         self.table_plan.model().layoutChanged.connect(self.update_title)
 
+        self.table_tasklist.selectionModel().selectionChanged.connect(
+            lambda: self.show_selection_count(self.table_tasklist.selectionModel())
+        )
+        self.table_plan.selectionModel().selectionChanged.connect(
+            lambda: self.show_selection_count(self.table_plan.selectionModel())
+        )
+
         self.table_plan.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table_plan.customContextMenuRequested.connect(
             lambda pos: self._show_context_menu(
@@ -246,6 +253,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def filter_tasklist(self, query):
         print("TODO: Implement tasklist filtering functionality")
         print(f"Text query: {query}")
+
+    def show_selection_count(self, selection_model):
+        count = len(selection_model.selectedRows())
+        self.statusbar.showMessage(f"{count} selected")
 
     def update_title(self):
         activity_count = self.table_plan.model().rowCount() - 1
