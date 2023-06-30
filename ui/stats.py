@@ -102,6 +102,8 @@ class StatsDialog(QDialog, Ui_StatsDialog):
 
     def _plot_days_ago(self, days):
         if days >= 0:
+            self.dateEditTo.setMinimumDate(QDate.currentDate())
+            self.dateEditFrom.setMaximumDate(QDate.currentDate().addDays(-days))
             self.dateEditTo.setDate(QDate.currentDate())
             self.dateEditFrom.setDate(QDate.currentDate().addDays(-days))
 
