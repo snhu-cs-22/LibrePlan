@@ -1,3 +1,4 @@
+from PyQt5.QtCore import QStandardPaths
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 import model.storage.queries as queries
@@ -14,25 +15,32 @@ class QueryError(Exception):
         super().__init__(message)
 
 class Database:
+    PATH_APPDATA = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation) + "/LibrePlan"
+    PATH_DB = PATH_APPDATA + "/collection.db"
+
     connection = QSqlDatabase.addDatabase("QSQLITE")
     connection.setHostName("libreplan")
 
     DATE_FORMAT = "yyyy-MM-dd"
     TIME_FORMAT = "hh:mm"
 
-    def connect(self, db_path):
-        self.connection.setDatabaseName(db_path)
-        connected = self.connection.open()
-        if connected:
-            self._create_tables()
-        else:
-            e = self.connection.lastError()
-            print(f"Failed to connect from database: {e.nativeErrorCode()} {e.type()} {e.text()}")
-        return connected
+    @classmethod
+    def connect(cls):
+        if not cls.connection.isOpen():
+            cls.connection.setDatabaseName(cls.PATH_DB)
+            connected = cls.connection.open()
+            if connected:
+                cls._create_tables()
+            else:
+                e = cls.connection.lastError()
+                print(f"Failed to connect from database: {e.nativeErrorCode()} {e.type()} {e.text()}")
+            return connected
+        return True
 
-    def disconnect(self):
-        if self.connection.isOpen():
-            self.connection.close()
+    @classmethod
+    def disconnect(cls):
+        if cls.connection.isOpen():
+            cls.connection.close()
         else:
             print("Database connection is not open")
 
@@ -81,13 +89,17 @@ class Database:
             raise QueryError(query)
         return query_successful
 
-    def _create_tables(self):
+    @staticmethod
+    def _create_tables():
         table_queries = [
             Database.get_prepared_query(queries.create_plan_table),
             Database.get_prepared_query(queries.create_tasklist_table),
             Database.get_prepared_query(queries.create_activity_table),
             Database.get_prepared_query(queries.create_log_table),
+            Database.get_prepared_query(queries.create_config_table),
         ]
 
         for query in table_queries:
             Database.execute_query(query)
+
+Database.connect()

@@ -1,5 +1,5 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QStandardPaths, QTimer, QTime, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QTimer, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox, QLineEdit
 
@@ -11,9 +11,6 @@ from ui.main_window import MainWindow
 from ui.stats import StatsDialog
 
 class Application(QApplication):
-    PATH_APPDATA = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation) + "/LibrePlan"
-    PATH_DB = PATH_APPDATA + "/collection.db"
-
     countdownUpdateRequested = pyqtSignal(int)
     titleUpdateRequested = pyqtSignal()
     planActivityEnded = pyqtSignal(Activity)
@@ -22,9 +19,6 @@ class Application(QApplication):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
-        self.db = Database()
-        self.db.connect(self.PATH_DB)
 
         self.plan = PlanTableModel(self)
         self.tasklist = TasklistTableModel(self)
@@ -254,7 +248,6 @@ class Application(QApplication):
     ################################################################################
 
     def exit_app(self):
-        self.db.disconnect()
         print("Program exited successfully.")
         super().exit(0)
 
