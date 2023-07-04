@@ -33,6 +33,7 @@ class Database:
 
     @staticmethod
     def execute_query(query):
+        Database.connection.transaction()
         query_successful = query.exec_()
         if query_successful:
             Database.connection.commit()
@@ -48,6 +49,7 @@ class Database:
 
     @staticmethod
     def execute_batch_query(query):
+        Database.connection.transaction()
         query_successful = query.execBatch()
         if query_successful:
             Database.connection.commit()
