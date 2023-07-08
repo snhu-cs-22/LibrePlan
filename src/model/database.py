@@ -2,6 +2,17 @@ from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 import model.storage.queries as queries
 
+class QueryError(Exception):
+    def __init__(self, query):
+        q = query.executedQuery()
+        b = query.boundValues()
+        e = query.lastError()
+        message = f"Error code {e.nativeErrorCode()}, type {e.type()}: {e.text()}\n" \
+            f"Query\n" \
+            f"{q}\n" \
+            f"was bound to these values: {b}"
+        super().__init__(message)
+
 class Database:
     connection = QSqlDatabase.addDatabase("QSQLITE")
     connection.setHostName("libreplan")
@@ -38,13 +49,8 @@ class Database:
         if query_successful:
             Database.connection.commit()
         else:
-            q = query.executedQuery()
-            e = query.lastError()
-            print(
-                f"Query \"{q}\" failed:",
-                f"\tQuery error {e.nativeErrorCode()} ({e.type()}): {e.text()}"
-            )
             Database.connection.rollback()
+            raise QueryError(query)
         return query_successful
 
     @staticmethod
@@ -54,13 +60,8 @@ class Database:
         if query_successful:
             Database.connection.commit()
         else:
-            q = query.executedQuery()
-            e = query.lastError()
-            print(
-                f"Query \"{q}\" failed:",
-                f"\tQuery error {e.nativeErrorCode()} ({e.type()}): {e.text()}"
-            )
             Database.connection.rollback()
+            raise QueryError(query)
         return query_successful
 
     def _create_tables(self):
