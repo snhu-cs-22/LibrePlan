@@ -44,6 +44,15 @@ class Database:
 
     @staticmethod
     def execute_query(query):
+        """Executes a query with parameters bound to a single value.
+
+        This method is good for running `SELECT` queries and queries
+        with no parameters.
+
+        Wrapper for `QSqlQuery.exec_()` with additional error and
+        transaction handling.
+        """
+
         Database.connection.transaction()
         query_successful = query.exec_()
         if query_successful:
@@ -55,6 +64,14 @@ class Database:
 
     @staticmethod
     def execute_batch_query(query):
+        """Executes a query with parameters bound to a list of values.
+
+        Good for running `INSERT`, `UPDATE`, and `DELETE` queries.
+
+        Wrapper for `QSqlQuery.execBatch()` with additional error and
+        transaction handling.
+        """
+
         Database.connection.transaction()
         query_successful = query.execBatch()
         if query_successful:
