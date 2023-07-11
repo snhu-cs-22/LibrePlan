@@ -1,2 +1,5 @@
 PyQt5
 PyQtChart
+pyqt5-tools
+pyinstaller
+Pillow

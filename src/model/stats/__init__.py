@@ -17,6 +17,8 @@ from PyQt5.QtWidgets import QApplication
 
 from model.database import Database
 
+import model.stats.queries as queries
+
 class StatsModel:
     """Provides charts and other summarized statistical data from the activity log."""
 
@@ -182,19 +184,19 @@ class StatsModel:
     ################################################################################
 
     def _setupQueries(self):
-        self.query_activity_names = Database.query_from_file("model/stats/get_activity_names.sql")
-        self.query_log_date_range = Database.query_from_file("model/stats/get_log_date_range.sql")
+        self.query_activity_names = Database.get_prepared_query(queries.get_activity_names)
+        self.query_log_date_range = Database.get_prepared_query(queries.get_log_date_range)
 
-        self.query_pie = Database.query_from_file("model/stats/get_pie_chart.sql")
+        self.query_pie = Database.get_prepared_query(queries.get_pie_chart)
 
-        self.query_perf_axis_range = Database.query_from_file("model/stats/get_perf_axis_range.sql")
-        self.query_perf = Database.query_from_file("model/stats/get_perf_chart.sql")
+        self.query_perf_axis_range = Database.get_prepared_query(queries.get_perf_axis_range)
+        self.query_perf = Database.get_prepared_query(queries.get_perf_chart)
 
-        self.query_daily_axis_range = Database.query_from_file("model/stats/get_daily_axis_range.sql")
-        self.query_daily_avg = Database.query_from_file("model/stats/get_daily_avg.sql")
+        self.query_daily_axis_range = Database.get_prepared_query(queries.get_daily_axis_range)
+        self.query_daily_avg = Database.get_prepared_query(queries.get_daily_avg)
 
-        self.query_circadian_axis_range = Database.query_from_file("model/stats/get_circadian_axis_range.sql")
-        self.query_circadian = Database.query_from_file("model/stats/get_circadian_chart.sql")
+        self.query_circadian_axis_range = Database.get_prepared_query(queries.get_circadian_axis_range)
+        self.query_circadian = Database.get_prepared_query(queries.get_circadian_chart)
 
     def set_filter(self, text):
         self._filter_text = text

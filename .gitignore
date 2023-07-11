@@ -4,7 +4,10 @@ resources
 # Files
 
 # Compiled .ui files
-ui/forms/*.py
+src/ui/forms/*.py
+
+# Compiled .sql files
+queries.py
 
 # Boilerplate from https://github.com/github/gitignore/blob/main/Python.gitignore
 

@@ -5,6 +5,8 @@ from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QTime
 
 from model.database import Database
 
+import model.plan.queries as queries
+
 class Activity:
     def __init__(self,
         name="Activity",
@@ -140,8 +142,8 @@ class PlanTableModel(QAbstractTableModel):
             print(f"    Percent: {activity.get_percent()}")
 
     def archive(self):
-        activity_query = Database.query_from_file("model/plan/insert_into_activities.sql")
-        log_query = Database.query_from_file("model/plan/insert_into_log.sql")
+        activity_query = Database.get_prepared_query(queries.insert_into_activities)
+        log_query = Database.get_prepared_query(queries.insert_into_log)
 
         for i in range(self.rowCount() - 1):
             activity = self._activities[i]

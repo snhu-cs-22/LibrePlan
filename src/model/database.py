@@ -1,5 +1,6 @@
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
-from PyQt5.QtCore import QFile, QIODevice, QTextStream
+
+import model.storage.queries as queries
 
 class Database:
     connection = QSqlDatabase.addDatabase("QSQLITE")
@@ -23,23 +24,9 @@ class Database:
                 print(f"Connection: {self.connection.lastError().text()}")
 
     @staticmethod
-    def query_from_file(path):
-        """Allows the creation of SQL queries from .sql files
-
-        Path separator must be '/'. '\' is not supported.
-
-        File specified in `path` must not contain multiple queries (i.e.,
-        separated by a ';').
-        """
-
-        file = QFile(path)
-        if not file.open(QIODevice.ReadOnly | QIODevice.Text):
-            return None
-
-        text = QTextStream(file)
+    def get_prepared_query(sql):
         query = QSqlQuery()
-        query.prepare(text.readAll())
-        file.close()
+        query.prepare(sql)
         return query
 
     @staticmethod
@@ -74,7 +61,7 @@ class Database:
         return query_successful
 
     def _create_tables(self):
-        create_table_query = Database.query_from_file("model/storage/create_activity_table.sql")
+        create_table_query = Database.get_prepared_query(queries.create_activity_table)
         Database.execute_query(create_table_query)
-        create_table_query = Database.query_from_file("model/storage/create_log_table.sql")
+        create_table_query = Database.get_prepared_query(queries.create_log_table)
         Database.execute_query(create_table_query)

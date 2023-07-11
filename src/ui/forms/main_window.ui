@@ -15,7 +15,7 @@
   </property>
   <property name="windowIcon">
    <iconset>
-    <normaloff>../../resources/icon.png</normaloff>../../resources/icon.png</iconset>
+    <normaloff>../../../resources/icon.png</normaloff>../../../resources/icon.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
