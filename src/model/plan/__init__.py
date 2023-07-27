@@ -3,6 +3,7 @@ from math import floor
 
 from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QTime, QDateTime
 
+from model.config import Config
 from model.database import Database
 from model.importing import ReplaceOption
 from ui.item_delegates import GenericDelegate, BoolDelegate, PercentDelegate
@@ -100,7 +101,7 @@ class PlanTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self._activities = []
-        self._current_activity_index = 0
+        self._current_activity_index = Config.get_setting("current_activity_index", 0)
 
         self.query_count = Database.get_prepared_query(queries.count)
         self.query_insert = Database.get_prepared_query(queries.insert_activity)
@@ -256,6 +257,7 @@ class PlanTableModel(QAbstractTableModel):
         final_activity_index = self.rowCount() - 1
         if index <= final_activity_index:
             self._current_activity_index = index
+            Config.set_setting("current_activity_index", index)
 
     def set_current_activity_start_time(self):
         self.setData(
