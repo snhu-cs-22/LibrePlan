@@ -8,6 +8,51 @@ from model.database import Database
 import model.plan.queries as queries
 
 class Activity:
+    COLUMNS = [
+        {
+            "attr": "is_fixed",
+            "label": "F",
+            "user_editable": True,
+        },
+        {
+            "attr": "is_rigid",
+            "label": "R",
+            "user_editable": True,
+        },
+        {
+            "attr": "start_time",
+            "label": "Start",
+            "user_editable": True,
+        },
+        {
+            "attr": "name",
+            "label": "Name",
+            "user_editable": True,
+        },
+        {
+            "attr": "length",
+            "label": "Length",
+            "user_editable": True,
+        },
+        {
+            "attr": "actual_length",
+            "label": "ActLen",
+            "user_editable": False,
+        },
+        {
+            "attr": "optimal_length",
+            "label": "OptLen",
+            "user_editable": False,
+        },
+        {
+            "attr": "get_percent",
+            "label": "Percent",
+            "user_editable": False,
+        },
+    ]
+
+    COLUMN_INDICES = dict([(col["attr"], i) for i, col in enumerate(COLUMNS)])
+
     def __init__(self,
         name="Activity",
         length=0,
@@ -30,14 +75,21 @@ class Activity:
         else:
             return 0.0
 
+    def get_attr_by_index(self, index):
+        try:
+            return getattr(self, Activity.COLUMNS[index]["attr"])()
+        except:
+            return getattr(self, Activity.COLUMNS[index]["attr"])
+
+    def set_attr_by_index(self, index, value):
+        setattr(self, Activity.COLUMNS[index]["attr"], value)
+
 class PlanTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self._activities = []
         self._fixed_indices = []
         self._current_activity_index = 0
-        self._header = ["F", "R", "Start", "Name", "Length", "ActLen", "OptLen", "Percent"]
-        self._EDITABLE_COLUMNS = [0, 1, 2, 3, 4]
         self._TIME_FORMAT = "hh:mm"
 
     # CRUD operations
@@ -171,7 +223,10 @@ class PlanTableModel(QAbstractTableModel):
 
     def set_current_activity_start_time(self):
         self.setData(
-            self.createIndex(self._current_activity_index, 2),
+            self.createIndex(
+                self._current_activity_index,
+                Activity.COLUMN_INDICES["start_time"]
+            ),
             self._get_current_time_rounded()
         )
         self.layoutChanged.emit()
@@ -184,7 +239,10 @@ class PlanTableModel(QAbstractTableModel):
         self._increment_current_activity_index()
 
         self.setData(
-            self.createIndex(self._current_activity_index - 1, 5),
+            self.createIndex(
+                self._current_activity_index - 1,
+                Activity.COLUMN_INDICES["actual_length"]
+            ),
             length
         )
         self.layoutChanged.emit()
@@ -253,38 +311,6 @@ class PlanTableModel(QAbstractTableModel):
             if not self._activities[i].is_fixed:
                 self._activities[i].start_time = self._activities[i - 1].start_time.addSecs(self._activities[i - 1].actual_length * 60)
 
-    def _get_activity_property_by_column_index(self, activity, index):
-        if index == 0:
-            return activity.is_fixed
-        elif index == 1:
-            return activity.is_rigid
-        elif index == 2:
-            return activity.start_time
-        elif index == 3:
-            return activity.name
-        elif index == 4:
-            return activity.length
-        elif index == 5:
-            return activity.actual_length
-        elif index == 6:
-            return activity.optimal_length
-        elif index == 7:
-            return activity.get_percent()
-
-    def _set_activity_property_by_column_index(self, activity, index, value):
-        if index == 0:
-            activity.is_fixed = value
-        elif index == 1:
-            activity.is_rigid = value
-        elif index == 2:
-            activity.start_time = value
-        elif index == 3:
-            activity.name = value
-        elif index == 4:
-            activity.length = value
-        elif index == 5:
-            activity.actual_length = value
-
     def _get_current_time_rounded(self):
         # TODO: Round down seconds for simplicity
         now = QTime.currentTime()
@@ -303,17 +329,17 @@ class PlanTableModel(QAbstractTableModel):
         return len(self._activities)
 
     def columnCount(self, parent=QModelIndex):
-        return len(self._header)
+        return len(Activity.COLUMNS)
 
     def data(self, index, role):
         if role == Qt.DisplayRole:
             activity = self._activities[index.row()]
-            return self._get_activity_property_by_column_index(activity, index.column())
+            return activity.get_attr_by_index(index.column())
         return None
 
-    def headerData(self, column, orientation=Qt.Horizontal, role=Qt.DisplayRole):
+    def headerData(self, index, orientation=Qt.Horizontal, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self._header[column]
+            return Activity.COLUMNS[index]["label"]
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
@@ -321,12 +347,13 @@ class PlanTableModel(QAbstractTableModel):
             if not index.isValid():
                 return False
             activity = self._activities[index.row()]
-            self._set_activity_property_by_column_index(activity, index.column(), value)
+            activity.set_attr_by_index(index.column(), value)
             self.calculate()
             self.dataChanged.emit(index, index)
             return True
 
     def flags(self, index):
-        if index.column() in self._EDITABLE_COLUMNS and index.row() >= self._current_activity_index:
+        editable_columns = [i for i, col in enumerate(Activity.COLUMNS) if col["user_editable"]]
+        if index.column() in editable_columns and index.row() >= self._current_activity_index:
             return super().flags(index) | Qt.ItemIsEditable
         return super().flags(index)

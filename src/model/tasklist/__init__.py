@@ -11,6 +11,51 @@ class DeadlineType(Enum):
     POSTDECLINE = auto()
 
 class Task:
+    COLUMNS = [
+        {
+            "attr": "get_priority",
+            "label": "Priority",
+            "user_editable": False,
+        },
+        {
+            "attr": "value",
+            "label": "Value",
+            "user_editable": True,
+        },
+        {
+            "attr": "cost",
+            "label": "Cost",
+            "user_editable": True,
+        },
+        {
+            "attr": "name",
+            "label": "Name",
+            "user_editable": True,
+        },
+        {
+            "attr": "DATE_CREATED",
+            "label": "Date Added",
+            "user_editable": True,
+        },
+        {
+            "attr": "deadline",
+            "label": "Deadline",
+            "user_editable": True,
+        },
+        {
+            "attr": "get_halftime",
+            "label": "Halftime",
+            "user_editable": False,
+        },
+        {
+            "attr": "deadline_type",
+            "label": "Deadline Type",
+            "user_editable": True,
+        },
+    ]
+
+    COLUMN_INDICES = dict([(col["attr"], i) for i, col in enumerate(COLUMNS)])
+
     def __init__(self,
         name="Task",
         value=0,
@@ -77,12 +122,19 @@ class Task:
             return self.DATE_CREATED.addDays(self.DATE_CREATED.daysTo(self.deadline) // 2)
         return QDate()
 
+    def get_attr_by_index(self, index):
+        try:
+            return getattr(self, Task.COLUMNS[index]["attr"])()
+        except:
+            return getattr(self, Task.COLUMNS[index]["attr"])
+
+    def set_attr_by_index(self, index, value):
+        setattr(self, Task.COLUMNS[index]["attr"], value)
+
 class TasklistTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self._tasks = []
-        self._header = ["Priority", "Value", "Cost", "Name", "Date Added", "Deadline", "Halftime", "Deadline Type"]
-        self._EDITABLE_COLUMNS = [1, 2, 3, 5, 7]
         self._DATE_FORMAT = "yyyy-MM-dd"
 
     def get_task(self, index):
@@ -161,36 +213,6 @@ class TasklistTableModel(QAbstractTableModel):
             print(f"    Halftime: {task.get_halftime().toString(self._DATE_FORMAT)}")
             print(f"    Deadline Type: {task.deadline_type}")
 
-    def _get_task_property_by_column_index(self, task, index):
-        if index == 0:
-            return task.get_priority()
-        elif index == 1:
-            return task.value
-        elif index == 2:
-            return task.cost
-        elif index == 3:
-            return task.name
-        elif index == 4:
-            return task.DATE_CREATED
-        elif index == 5:
-            return task.deadline
-        elif index == 6:
-            return task.get_halftime()
-        elif index == 7:
-            return task.deadline_type
-
-    def _set_task_property_by_column_index(self, task, index, value):
-        if index == 1:
-            task.value = value
-        elif index == 2:
-            task.cost = value
-        elif index == 3:
-            task.name = value
-        elif index == 5:
-            task.deadline = value
-        elif index == 7:
-            task.deadline_type = value
-
     # Qt API Implementation
     ################################################################################
 
@@ -198,17 +220,17 @@ class TasklistTableModel(QAbstractTableModel):
         return len(self._tasks)
 
     def columnCount(self, parent=QModelIndex):
-        return len(self._header)
+        return len(Task.COLUMNS)
 
     def data(self, index, role):
         if role == Qt.DisplayRole:
             task = self._tasks[index.row()]
-            return self._get_task_property_by_column_index(task, index.column())
+            return task.get_attr_by_index(index.column())
         return None
 
-    def headerData(self, column, orientation=Qt.Horizontal, role=Qt.DisplayRole):
+    def headerData(self, index, orientation=Qt.Horizontal, role=Qt.DisplayRole):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return self._header[column]
+            return Task.COLUMNS[index]["label"]
         return None
 
     def setData(self, index, value, role=Qt.EditRole):
@@ -216,12 +238,13 @@ class TasklistTableModel(QAbstractTableModel):
             if not index.isValid():
                 return False
             task = self._tasks[index.row()]
-            self._set_task_property_by_column_index(task, index.column(), value)
+            task.set_attr_by_index(index.column(), value)
             self.calculate()
             self.dataChanged.emit(index, index)
             return True
 
     def flags(self, index):
-        if index.column() in self._EDITABLE_COLUMNS:
+        editable_columns = [i for i, col in enumerate(Task.COLUMNS) if col["user_editable"]]
+        if index.column() in editable_columns:
             return super().flags(index) | Qt.ItemIsEditable
         return super().flags(index)
