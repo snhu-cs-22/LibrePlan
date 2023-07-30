@@ -381,7 +381,7 @@ class PlanTableModel(QAbstractTableModel):
         self.calculate()
 
     def _get_activity_from_db(self):
-        return Activity(
+        activity = Activity(
             id=self.query_read.value("id"),
             name=self.query_read.value("name"),
             length=self.query_read.value("length"),
@@ -389,6 +389,11 @@ class PlanTableModel(QAbstractTableModel):
             is_fixed=bool(self.query_read.value("is_fixed")),
             is_rigid=bool(self.query_read.value("is_rigid")),
         )
+
+        if self.query_read.value("order") < self._current_activity_index:
+            activity.actual_length = self.query_read.value("actual_length")
+
+        return activity
 
     def _get_current_time_rounded(self):
         # TODO: Round down seconds for simplicity
@@ -450,6 +455,7 @@ class PlanTableModel(QAbstractTableModel):
             self.query_update.bindValue(":start_time", QTime.toString(activity.start_time, Database.TIME_FORMAT))
             self.query_update.bindValue(":name", activity.name)
             self.query_update.bindValue(":length", activity.length)
+            self.query_update.bindValue(":actual_length", activity.actual_length)
             self.query_update.bindValue(":is_fixed", activity.is_fixed)
             self.query_update.bindValue(":is_rigid", activity.is_rigid)
             Database.execute_query(self.query_update)
