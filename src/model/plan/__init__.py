@@ -166,7 +166,7 @@ class PlanTableModel(QAbstractTableModel):
     def set_current_activity_index(self, index):
         # The final activity marks the end of the plan, so we stop one before the end
         final_activity_index = self.rowCount() - 1
-        if index < final_activity_index:
+        if index <= final_activity_index:
             self._current_activity_index = index
 
     def set_current_activity_start_time(self):
@@ -193,7 +193,7 @@ class PlanTableModel(QAbstractTableModel):
         self.set_current_activity_index(0)
 
     def is_completed(self):
-        final_activity_index = self.rowCount() - 2
+        final_activity_index = self.rowCount() - 1
         return self._current_activity_index >= final_activity_index
 
     def calculate(self):
