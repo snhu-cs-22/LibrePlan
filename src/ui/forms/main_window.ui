@@ -124,16 +124,6 @@
             </property>
            </widget>
           </item>
-          <item>
-           <widget class="QPushButton" name="pushButton_archive">
-            <property name="enabled">
-             <bool>false</bool>
-            </property>
-            <property name="text">
-             <string>Ar&amp;chive</string>
-            </property>
-           </widget>
-          </item>
          </layout>
         </item>
         <item>
@@ -306,7 +296,6 @@
     <addaction name="actionReplace"/>
     <addaction name="actionInterrupt"/>
     <addaction name="actionAbort"/>
-    <addaction name="actionPlan_Archive"/>
     <addaction name="separator"/>
     <addaction name="menuPlan_Show_Hide_Columns"/>
     <addaction name="separator"/>

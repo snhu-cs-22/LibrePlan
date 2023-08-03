@@ -19,7 +19,6 @@ class Application(QApplication):
     planActivityEnded = pyqtSignal(Activity)
     planActivityCompleted = pyqtSignal()
     planCompleted = pyqtSignal()
-    planArchived = pyqtSignal()
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -63,7 +62,6 @@ class Application(QApplication):
         self.main_window.planReplaceRequested.connect(self.plan_replace)
         self.main_window.planInterruptRequested.connect(self.plan_interrupt)
         self.main_window.planAbortRequested.connect(self.plan_abort)
-        self.main_window.planArchiveRequested.connect(self.plan_archive)
 
         self.main_window.planAddActivity.connect(self.add_activity)
         self.main_window.planDeleteActivities.connect(self.delete_activities)
@@ -228,10 +226,6 @@ class Application(QApplication):
     def plan_abort(self):
         self.timer_countdown.stop()
         self.send_window_title_update_signal()
-
-    def plan_archive(self):
-        self.plan.archive()
-        self.planArchived.emit()
 
     # Model handling
     ################################################################################

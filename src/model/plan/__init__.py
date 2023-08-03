@@ -110,7 +110,7 @@ class PlanTableModel(QAbstractTableModel):
         self.query_update = Database.get_prepared_query(queries.update_activity)
         self.query_delete = Database.get_prepared_query(queries.delete_activity)
         self.query_clear = Database.get_prepared_query(queries.delete_all_activities)
-        self.query_archive_names = Database.get_prepared_query(queries.insert_into_activities)
+        self.query_archive_name = Database.get_prepared_query(queries.insert_into_activities)
         self.query_insert_into_log = Database.get_prepared_query(queries.insert_into_log)
 
         self._read_activities()
@@ -248,18 +248,6 @@ class PlanTableModel(QAbstractTableModel):
             activities_json = json.dumps(activities_properties)
             f.write(activities_json)
 
-    def archive(self):
-        Database.execute_query(self.query_archive_names)
-
-        self.query_insert_into_log.bindValue(":start_time", [a.start_time.toString(Database.TIME_FORMAT) for a in self._activities])
-        self.query_insert_into_log.bindValue(":name", [a.name for a in self._activities])
-        self.query_insert_into_log.bindValue(":length", [a.length for a in self._activities])
-        self.query_insert_into_log.bindValue(":actual_length", [a.actual_length for a in self._activities])
-        self.query_insert_into_log.bindValue(":optimal_length", [a.optimal_length for a in self._activities])
-        self.query_insert_into_log.bindValue(":is_fixed", [int(a.is_fixed) for a in self._activities])
-        self.query_insert_into_log.bindValue(":is_rigid", [int(a.is_rigid) for a in self._activities])
-        Database.execute_batch_query(self.query_insert_into_log)
-
     # Functionality Helper Methods
     ################################################################################
 
@@ -299,6 +287,7 @@ class PlanTableModel(QAbstractTableModel):
         self.layoutChanged.emit()
 
     def complete(self):
+        self._archive()
         self.set_current_activity_index(0)
 
     def is_completed(self):
@@ -409,6 +398,21 @@ class PlanTableModel(QAbstractTableModel):
         self.set_current_activity_index(
             self._current_activity_index + 1
         )
+
+    def _archive(self):
+        activities = self._activities[:-1]
+        self.query_archive_name.bindValue(":name", [a.name for a in activities])
+        Database.execute_batch_query(self.query_archive_name)
+
+        self.query_insert_into_log.bindValue(":order", [i for i, a in enumerate(activities)])
+        self.query_insert_into_log.bindValue(":start_time", [a.start_time.toString(Database.TIME_FORMAT) for a in activities])
+        self.query_insert_into_log.bindValue(":name", [a.name for a in activities])
+        self.query_insert_into_log.bindValue(":length", [a.length for a in activities])
+        self.query_insert_into_log.bindValue(":actual_length", [a.actual_length for a in activities])
+        self.query_insert_into_log.bindValue(":optimal_length", [a.optimal_length for a in activities])
+        self.query_insert_into_log.bindValue(":is_fixed", [int(a.is_fixed) for a in activities])
+        self.query_insert_into_log.bindValue(":is_rigid", [int(a.is_rigid) for a in activities])
+        Database.execute_batch_query(self.query_insert_into_log)
 
     # Qt API Implementation
     ################################################################################

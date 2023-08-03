@@ -23,7 +23,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     planInterruptRequested = pyqtSignal()
     planReplaceRequested = pyqtSignal()
     planAbortRequested = pyqtSignal()
-    planArchiveRequested = pyqtSignal()
 
     planAddActivity = pyqtSignal(int, bool)
     planDeleteActivities = pyqtSignal(list)
@@ -37,7 +36,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self, application, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.archive_mode = False
         self.application = application
         self.tray_icon = QSystemTrayIcon(self)
 
@@ -98,7 +96,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionInterrupt.triggered.connect(self.planInterruptRequested)
         self.actionReplace.triggered.connect(self.planReplaceRequested)
         self.actionAbort.triggered.connect(self.planAbortRequested)
-        self.actionPlan_Archive.triggered.connect(self.planArchiveRequested)
         self.actionShow_Statistics.triggered.connect(self.statsWindowRequested)
 
         self.actionAdd_New_Activity.triggered.connect(
@@ -147,7 +144,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
         self.pushButton_interrupt.clicked.connect(self.planInterruptRequested)
         self.pushButton_abort.clicked.connect(self.planAbortRequested)
-        self.pushButton_archive.clicked.connect(self.planArchiveRequested)
 
         self.pushButton_new_task.clicked.connect(self.tasklistNewTask)
         self.pushButton_add_activity.clicked.connect(
@@ -211,8 +207,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.application.titleUpdateRequested.connect(self.update_title)
         self.application.planActivityEnded.connect(self._message_activity_end)
         self.application.planActivityCompleted.connect(self._on_activity_completed)
-        self.application.planCompleted.connect(self._toggle_archive_mode)
-        self.application.planArchived.connect(self._toggle_archive_mode)
 
     def _setupKeys(self):
         globalShortcuts = [
@@ -314,30 +308,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _on_activity_completed(self):
         self.tabWidget.setCurrentIndex(0)
-
-    def _toggle_archive_mode(self):
-        self.archive_mode = not self.archive_mode
-
-        # Enable archive button
-        self.pushButton_archive.setEnabled(self.archive_mode)
-        self.actionPlan_Archive.setEnabled(self.archive_mode)
-
-        # Disable buttons
-        self.pushButton_start_now.setEnabled(not self.archive_mode)
-        self.pushButton_end.setEnabled(not self.archive_mode)
-        self.pushButton_interrupt.setEnabled(not self.archive_mode)
-        self.pushButton_abort.setEnabled(not self.archive_mode)
-        self.pushButton_add_activity.setEnabled(not self.archive_mode)
-
-        # Disable menu actions
-        self.actionNew_Plan.setEnabled(not self.archive_mode)
-        self.actionStart_now.setEnabled(not self.archive_mode)
-        self.actionStart_Plan_Preemptively.setEnabled(not self.archive_mode)
-        self.actionStart_Plan_from_Here_Now.setEnabled(not self.archive_mode)
-        self.actionStart_Plan_from_Here_Preemptively.setEnabled(not self.archive_mode)
-        self.actionEnd.setEnabled(not self.archive_mode)
-        self.actionInterrupt.setEnabled(not self.archive_mode)
-        self.actionAbort.setEnabled(not self.archive_mode)
 
     def _show_context_menu(self, obj, menu, pos):
         gpos = obj.mapToGlobal(pos)
