@@ -258,8 +258,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for i, col in enumerate(Activity.COLUMNS):
             self.table_plan.setItemDelegateForColumn(i, col["delegate"](self))
 
-        self.table_plan.resizeColumnsToContents()
         self.table_plan.horizontalHeader().setSectionsMovable(True)
+        self.table_plan.horizontalHeader().restoreState(
+            bytes(
+                Config.get_setting(
+                    "ui.plan/header_state",
+                    self.table_plan.horizontalHeader().saveState()
+                )
+            )
+        )
         self._populate_header_context_menu(self.table_plan, self.menuPlan_Show_Hide_Columns)
 
         # Tasklist
@@ -268,8 +275,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         for i, col in enumerate(Task.COLUMNS):
             self.table_tasklist.setItemDelegateForColumn(i, col["delegate"](self))
 
-        self.table_tasklist.resizeColumnsToContents()
         self.table_tasklist.horizontalHeader().setSectionsMovable(True)
+        self.table_tasklist.horizontalHeader().restoreState(
+            bytes(
+                Config.get_setting(
+                    "ui.tasklist/header_state",
+                    self.table_tasklist.horizontalHeader().saveState()
+                )
+            )
+        )
         self._populate_header_context_menu(self.table_tasklist, self.menuTasklist_Show_Hide_Columns)
 
         self.update_title()
@@ -355,3 +369,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         super().hide()
         Config.set_state(self)
         Config.set_geometry(self)
+        Config.set_setting(
+            "ui.plan/header_state",
+            self.table_plan.horizontalHeader().saveState()
+        )
+        Config.set_setting(
+            "ui.tasklist/header_state",
+            self.table_tasklist.horizontalHeader().saveState()
+        )
