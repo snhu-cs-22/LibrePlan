@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt, QEvent, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut, QSystemTrayIcon
 
+from model.config import Config
 from model.plan import PlanTableModel, Activity
 from model.tasklist import TasklistTableModel, Task
 from ui.forms.main_window import Ui_MainWindow
@@ -40,6 +41,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tray_icon = QSystemTrayIcon(self)
 
         self.setupUi(self)
+        self.restoreState(Config.get_state(self))
+        self.restoreGeometry(Config.get_geometry(self))
         self._setupTables(application.plan, application.tasklist)
         self._setupSystemTrayIcon()
         self._connectSignals()
@@ -203,6 +206,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
 
     def _connectSlots(self):
+        self.appExitRequested.connect(self.hide)
         self.application.countdownUpdateRequested.connect(self.update_title_countdown)
         self.application.titleUpdateRequested.connect(self.update_title)
         self.application.planActivityEnded.connect(self._message_activity_end)
@@ -349,3 +353,5 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def hide(self):
         super().hide()
+        Config.set_state(self)
+        Config.set_geometry(self)

@@ -27,3 +27,29 @@ class Config:
         cls.query_set.bindValue(":key", key)
         cls.query_set.bindValue(":value", value)
         Database.execute_query(cls.query_set)
+
+    @classmethod
+    def get_state(cls, widget):
+        key = f"ui.{widget.objectName()}/state"
+        return cls.get_setting(
+            key,
+            widget.saveState()
+        )
+
+    @classmethod
+    def set_state(cls, widget):
+        key = f"ui.{widget.objectName()}/state"
+        cls.set_setting(key, widget.saveState())
+
+    @classmethod
+    def get_geometry(cls, widget):
+        key = f"ui.{widget.objectName()}/geometry"
+        return cls.get_setting(
+            key,
+            widget.saveGeometry()
+        )
+
+    @classmethod
+    def set_geometry(cls, widget):
+        key = f"ui.{widget.objectName()}/geometry"
+        cls.set_setting(key, widget.saveGeometry())
