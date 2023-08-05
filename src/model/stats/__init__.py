@@ -217,6 +217,9 @@ class StatsModel:
                 self.query_log_date_range.value("max_date"),
                 Database.DATE_FORMAT
             )
+        else:
+            self.min_date = QDate.currentDate()
+            self.max_date = QDate.currentDate()
 
     def update_plots(self):
         self._plot_pie_chart()
