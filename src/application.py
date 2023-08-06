@@ -190,17 +190,21 @@ class Application(QApplication):
             self.plan.set_current_activity_index(selected_indices[0])
             self.plan_start(preemptive)
 
-    def plan_end(self):
+    def plan_end(self, preemptive=False):
         if self.timer_countdown.isActive():
             self.timer_countdown.stop()
 
-            self.plan.complete_activity()
+            self.plan.complete_activity(preemptive)
             self.planActivityCompleted.emit()
+
             if self.plan.is_completed():
                 self.plan.complete()
                 self.planCompleted.emit()
+                self.send_window_title_update_signal()
+                return
 
-            self.send_window_title_update_signal()
+            if preemptive:
+                self.plan_start(preemptive)
 
     def plan_interrupt(self):
         input_text, ok = QInputDialog().getText(

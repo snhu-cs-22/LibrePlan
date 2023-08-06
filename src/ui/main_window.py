@@ -19,7 +19,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     planStartRequested = pyqtSignal(bool)
     planStartFromSelectedRequested = pyqtSignal(bool)
-    planEndRequested = pyqtSignal()
+    planEndRequested = pyqtSignal(bool)
     planInterruptRequested = pyqtSignal()
     planAbortRequested = pyqtSignal()
     planArchiveRequested = pyqtSignal()
@@ -77,7 +77,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionStart_Plan_from_Here_Preemptively.triggered.connect(
             lambda: self.planStartFromSelectedRequested.emit(True)
         )
-        self.actionEnd.triggered.connect(self.planEndRequested)
+        self.actionEnd.triggered.connect(
+            lambda: self.planEndRequested.emit(False)
+        )
+        self.actionEnd_Preemptively.triggered.connect(
+            lambda: self.planEndRequested.emit(True)
+        )
         self.actionInterrupt.triggered.connect(self.planInterruptRequested)
         self.actionAbort.triggered.connect(self.planAbortRequested)
         self.actionPlan_Archive.triggered.connect(self.planArchiveRequested)
@@ -100,7 +105,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_start_now.clicked.connect(
             lambda: self.planStartRequested.emit(False)
         )
-        self.pushButton_end.clicked.connect(self.planEndRequested)
+        self.pushButton_end.clicked.connect(
+            lambda: self.planEndRequested.emit(False)
+        )
         self.pushButton_interrupt.clicked.connect(self.planInterruptRequested)
         self.pushButton_abort.clicked.connect(self.planAbortRequested)
         self.pushButton_archive.clicked.connect(self.planArchiveRequested)

@@ -302,6 +302,7 @@
     <addaction name="actionStart_now"/>
     <addaction name="actionStart_Plan_Preemptively"/>
     <addaction name="actionEnd"/>
+    <addaction name="actionEnd_Preemptively"/>
     <addaction name="actionInterrupt"/>
     <addaction name="actionAbort"/>
     <addaction name="actionPlan_Archive"/>
@@ -392,7 +393,7 @@
   </action>
   <action name="actionEnd">
    <property name="text">
-    <string>&amp;Finish</string>
+    <string>&amp;Finish Now</string>
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+E</string>
@@ -461,6 +462,14 @@
   <action name="actionShow_Statistics">
    <property name="text">
     <string>Show S&amp;tatistics...</string>
+   </property>
+  </action>
+  <action name="actionEnd_Preemptively">
+   <property name="text">
+    <string>Finish Preemptively and Start Ne&amp;xt</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+Shift+E</string>
    </property>
   </action>
  </widget>

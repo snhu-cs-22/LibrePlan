@@ -269,20 +269,22 @@ class PlanTableModel(QAbstractTableModel):
         )
         self.layoutChanged.emit()
 
-    def complete_activity(self):
+    def complete_activity(self, preemptive=False):
         current_activity = self.get_current_activity()
         now = self._get_current_time_rounded()
         length = current_activity.start_time.secsTo(now) // 60
 
         self._increment_current_activity_index()
 
-        self.setData(
-            self.createIndex(
-                self._current_activity_index - 1,
-                Activity.COLUMN_INDICES["actual_length"]
-            ),
-            length
-        )
+        if not preemptive:
+            self.setData(
+                self.createIndex(
+                    self._current_activity_index - 1,
+                    Activity.COLUMN_INDICES["actual_length"]
+                ),
+                length
+            )
+
         self.layoutChanged.emit()
 
     def complete(self):
