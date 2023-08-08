@@ -154,6 +154,17 @@ class PlanTableModel(QAbstractTableModel):
                 self.calculate()
                 self.layoutChanged.emit()
 
+    def insert_replacement(self, replacement_name):
+        current_activity = self.get_current_activity()
+        following_activity = self.get_following_activity()
+
+        now = self._get_current_time_rounded()
+        replacement = Activity(name=replacement_name)
+        replacement.length = now.secsTo(following_activity.start_time) // 60
+
+        insertion_index = self._current_activity_index + 1
+        self.insert_activity(insertion_index, replacement)
+
     def insert_interruption(self, interruption_name):
         current_activity = self.get_current_activity()
         following_activity = self.get_following_activity()

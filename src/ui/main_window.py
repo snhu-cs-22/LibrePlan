@@ -21,6 +21,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     planStartFromSelectedRequested = pyqtSignal(bool)
     planEndRequested = pyqtSignal(bool)
     planInterruptRequested = pyqtSignal()
+    planReplaceRequested = pyqtSignal()
     planAbortRequested = pyqtSignal()
     planArchiveRequested = pyqtSignal()
 
@@ -84,6 +85,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             lambda: self.planEndRequested.emit(True)
         )
         self.actionInterrupt.triggered.connect(self.planInterruptRequested)
+        self.actionReplace.triggered.connect(self.planReplaceRequested)
         self.actionAbort.triggered.connect(self.planAbortRequested)
         self.actionPlan_Archive.triggered.connect(self.planArchiveRequested)
         self.actionShow_Statistics.triggered.connect(self.statsWindowRequested)

@@ -303,6 +303,7 @@
     <addaction name="actionStart_Plan_Preemptively"/>
     <addaction name="actionEnd"/>
     <addaction name="actionEnd_Preemptively"/>
+    <addaction name="actionReplace"/>
     <addaction name="actionInterrupt"/>
     <addaction name="actionAbort"/>
     <addaction name="actionPlan_Archive"/>
@@ -470,6 +471,14 @@
    </property>
    <property name="shortcut">
     <string notr="true">Ctrl+Shift+E</string>
+   </property>
+  </action>
+  <action name="actionReplace">
+   <property name="text">
+    <string>Finish Now and &amp;Replace...</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+R</string>
    </property>
   </action>
  </widget>

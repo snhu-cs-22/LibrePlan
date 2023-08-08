@@ -60,6 +60,7 @@ class Application(QApplication):
         self.main_window.planStartRequested.connect(self.plan_start)
         self.main_window.planStartFromSelectedRequested.connect(self.plan_start_from_selected)
         self.main_window.planEndRequested.connect(self.plan_end)
+        self.main_window.planReplaceRequested.connect(self.plan_replace)
         self.main_window.planInterruptRequested.connect(self.plan_interrupt)
         self.main_window.planAbortRequested.connect(self.plan_abort)
         self.main_window.planArchiveRequested.connect(self.plan_archive)
@@ -215,6 +216,19 @@ class Application(QApplication):
 
         if ok and input_text:
             self.plan.insert_interruption(input_text)
+            self.plan_end()
+
+        self.send_window_title_update_signal()
+
+    def plan_replace(self):
+        input_text, ok = QInputDialog().getText(
+                    self.main_window,
+                    "Replace activity...",
+                    "Set name for replacement:"
+                )
+
+        if ok and input_text:
+            self.plan.insert_replacement(input_text)
             self.plan_end()
 
         self.send_window_title_update_signal()
