@@ -14,8 +14,6 @@ from PyQt5.QtWidgets import (
     QTimeEdit
 )
 
-from model.tasklist import DeadlineType
-
 class GenericDelegate(QStyledItemDelegate):
     """Generic delegate for the editing of build-in and Qt datatypes (int, str, QDate, etc.)"""
 
@@ -121,6 +119,7 @@ class DeadlineTypeDelegate(QStyledItemDelegate):
         QStyledItemDelegate.__init__(self, parent, *args)
 
     def createEditor(self, parent, option, index):
+        from model.tasklist import DeadlineType
         if isinstance(index.data(), DeadlineType):
             combo_box = QComboBox(parent)
             for type in list(DeadlineType):
@@ -129,14 +128,17 @@ class DeadlineTypeDelegate(QStyledItemDelegate):
         return None
 
     def setEditorData(self, editor, index):
+        from model.tasklist import DeadlineType
         if isinstance(index.data(), DeadlineType):
             editor.setCurrentText(index.data().name)
 
     def setModelData(self, editor, model, index):
+        from model.tasklist import DeadlineType
         value = editor.currentText()
         model.setData(index, DeadlineType[value])
 
     def displayText(self, value, locale):
+        from model.tasklist import DeadlineType
         if isinstance(value, DeadlineType):
             return value.name
         return str(value)

@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QDate, QDateTime
 
 from model.database import Database
 from model.importing import ReplaceOption
+from ui.item_delegates import GenericDelegate, DeadlineTypeDelegate, PercentDelegate
 
 import model.tasklist.queries as queries
 
@@ -21,41 +22,49 @@ class Task:
             "attr": "get_priority",
             "label": "Priority",
             "user_editable": False,
+            "delegate": PercentDelegate,
         },
         {
             "attr": "value",
             "label": "Value",
             "user_editable": True,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "cost",
             "label": "Cost",
             "user_editable": True,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "name",
             "label": "Name",
             "user_editable": True,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "DATE_CREATED",
             "label": "Date Added",
             "user_editable": True,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "deadline",
             "label": "Deadline",
             "user_editable": True,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "get_halftime",
             "label": "Halftime",
             "user_editable": False,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "deadline_type",
             "label": "Deadline Type",
             "user_editable": True,
+            "delegate": DeadlineTypeDelegate,
         },
     ]
 

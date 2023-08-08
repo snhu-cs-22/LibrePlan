@@ -5,6 +5,7 @@ from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QTime, QDateTime
 
 from model.database import Database
 from model.importing import ReplaceOption
+from ui.item_delegates import GenericDelegate, BoolDelegate, PercentDelegate
 
 import model.plan.queries as queries
 
@@ -14,41 +15,49 @@ class Activity:
             "attr": "is_fixed",
             "label": "F",
             "user_editable": True,
+            "delegate": BoolDelegate,
         },
         {
             "attr": "is_rigid",
             "label": "R",
             "user_editable": True,
+            "delegate": BoolDelegate,
         },
         {
             "attr": "start_time",
             "label": "Start",
             "user_editable": True,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "name",
             "label": "Name",
             "user_editable": True,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "length",
             "label": "Length",
             "user_editable": True,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "actual_length",
             "label": "ActLen",
             "user_editable": False,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "optimal_length",
             "label": "OptLen",
             "user_editable": False,
+            "delegate": GenericDelegate,
         },
         {
             "attr": "get_percent",
             "label": "Percent",
             "user_editable": False,
+            "delegate": PercentDelegate,
         },
     ]
 

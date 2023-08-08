@@ -5,10 +5,9 @@ from PyQt5.QtCore import Qt, QEvent, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut, QSystemTrayIcon
 
-from model.plan import PlanTableModel
-from model.tasklist import TasklistTableModel
+from model.plan import PlanTableModel, Activity
+from model.tasklist import TasklistTableModel, Task
 from ui.forms.main_window import Ui_MainWindow
-from ui.item_delegates import GenericDelegate, BoolDelegate, DeadlineTypeDelegate, PercentDelegate
 
 class MainWindow(QMainWindow, Ui_MainWindow):
     aboutDialogRequested = pyqtSignal()
@@ -208,17 +207,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _setupTables(self, plan_model, tasklist_model):
         # Plan
 
-        self.plan_delegate = GenericDelegate(self)
-        self.tasklist_delegate = GenericDelegate(self)
-        self.bool_delegate = BoolDelegate(self)
-        self.deadline_type_delegate = DeadlineTypeDelegate(self)
-        self.percent_delegate = PercentDelegate(self)
-
         self.table_plan.setModel(plan_model)
-        self.table_plan.setItemDelegate(self.plan_delegate)
-        self.table_plan.setItemDelegateForColumn(0, self.bool_delegate)
-        self.table_plan.setItemDelegateForColumn(1, self.bool_delegate)
-        self.table_plan.setItemDelegateForColumn(7, self.percent_delegate)
+        for i, col in enumerate(Activity.COLUMNS):
+            self.table_plan.setItemDelegateForColumn(i, col["delegate"](self))
 
         self.table_plan.resizeColumnsToContents()
         self.table_plan.horizontalHeader().setSectionsMovable(True)
@@ -227,9 +218,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Tasklist
 
         self.table_tasklist.setModel(tasklist_model)
-        self.table_tasklist.setItemDelegate(self.tasklist_delegate)
-        self.table_tasklist.setItemDelegateForColumn(0, self.percent_delegate)
-        self.table_tasklist.setItemDelegateForColumn(7, self.deadline_type_delegate)
+        for i, col in enumerate(Task.COLUMNS):
+            self.table_tasklist.setItemDelegateForColumn(i, col["delegate"](self))
 
         self.table_tasklist.resizeColumnsToContents()
         self.table_tasklist.horizontalHeader().setSectionsMovable(True)
