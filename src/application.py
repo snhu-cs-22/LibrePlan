@@ -65,17 +65,12 @@ class Application(QApplication):
         self.main_window.planAbortRequested.connect(self.plan_abort)
         self.main_window.planArchiveRequested.connect(self.plan_archive)
 
-        self.main_window.planAppendActivity.connect(
-            lambda: self.new_activity(True)
-        )
-        self.main_window.planInsertActivity.connect(
-            lambda: self.new_activity(False)
-        )
+        self.main_window.planAddActivity.connect(self.add_activity)
         self.main_window.planDeleteActivities.connect(self.delete_activities)
 
         self.main_window.statsWindowRequested.connect(self.show_stats_dialog)
 
-        self.main_window.tasklistNewTask.connect(self.new_task)
+        self.main_window.tasklistNewTask.connect(self.add_task)
         self.main_window.tasklistDeleteTasks.connect(self.delete_tasks)
 
         self.main_window.appExitRequested.connect(self.exit_app)
@@ -114,15 +109,14 @@ class Application(QApplication):
         if path:
             self.import_dialog = ImportDialog(self.tasklist, path)
 
-    def export_tasks_dialog(self, export_all):
+    def export_tasks_dialog(self, indices, export_all):
         path = QFileDialog.getSaveFileName(None, "Export Tasks")[0]
 
         if path:
             if export_all:
                 self.tasklist.export_tasks(path)
             else:
-                selected_indices = self.main_window.get_selected_tasklist_indices()
-                self.tasklist.export_tasks(path, selected_indices)
+                self.tasklist.export_tasks(path, indices)
 
     def new_plan_dialog(self):
         if self.plan.rowCount() != 0:
@@ -141,15 +135,14 @@ class Application(QApplication):
         if path:
             self.import_dialog = ImportDialog(self.plan, path)
 
-    def export_activities_dialog(self, export_all):
+    def export_activities_dialog(self, indices, export_all):
         path = QFileDialog.getSaveFileName(None, "Export Activities")[0]
 
         if path:
             if export_all:
                 self.plan.export_activities(path)
             else:
-                selected_indices = self.main_window.get_selected_plan_indices()
-                self.plan.export_activities(path, selected_indices)
+                self.plan.export_activities(path, indices)
 
     # Plan functionality
     ################################################################################
@@ -185,8 +178,7 @@ class Application(QApplication):
 
         self.send_window_title_update_signal()
 
-    def plan_start_from_selected(self, preemptive=False):
-        selected_indices = self.main_window.get_selected_plan_indices()
+    def plan_start_from_selected(self, selected_indices, preemptive=False):
         if selected_indices:
             self.plan.set_current_activity_index(selected_indices[0])
             self.plan_start(preemptive)
@@ -244,28 +236,25 @@ class Application(QApplication):
     # Model handling
     ################################################################################
 
-    def new_activity(self, append):
-        selected_indices = self.main_window.get_selected_plan_indices()
-        if len(selected_indices) == 0:
+    def add_activity(self, index, append):
+        if not index:
             insertion_point = self.plan.rowCount()
         elif append:
-            insertion_point = selected_indices[0] + 1
+            insertion_point = index + 1
         else:
-            insertion_point = selected_indices[0]
+            insertion_point = index
         self.plan.insert_activity(insertion_point, Activity())
 
-    def delete_activities(self):
-        selected_indices = self.main_window.get_selected_plan_indices()
-        if selected_indices:
-            self.plan.delete_activities(selected_indices)
+    def delete_activities(self, indices):
+        if indices:
+            self.plan.delete_activities(indices)
 
-    def new_task(self):
+    def add_task(self):
         self.tasklist.add_task(Task())
 
-    def delete_tasks(self):
-        selected_indices = self.main_window.get_selected_tasklist_indices()
-        if selected_indices:
-            self.tasklist.delete_tasks(selected_indices)
+    def delete_tasks(self, indices):
+        if indices:
+            self.tasklist.delete_tasks(indices)
 
     # App exit
     ################################################################################

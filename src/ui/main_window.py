@@ -13,26 +13,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     aboutDialogRequested = pyqtSignal()
     planNewRequested = pyqtSignal()
     planImportRequested = pyqtSignal()
-    planExportRequested = pyqtSignal(bool)
+    planExportRequested = pyqtSignal(list, bool)
     tasklistImportRequested = pyqtSignal()
-    tasklistExportRequested = pyqtSignal(bool)
+    tasklistExportRequested = pyqtSignal(list, bool)
 
     planStartRequested = pyqtSignal(bool)
-    planStartFromSelectedRequested = pyqtSignal(bool)
+    planStartFromSelectedRequested = pyqtSignal(list, bool)
     planEndRequested = pyqtSignal(bool)
     planInterruptRequested = pyqtSignal()
     planReplaceRequested = pyqtSignal()
     planAbortRequested = pyqtSignal()
     planArchiveRequested = pyqtSignal()
 
-    planAppendActivity = pyqtSignal()
-    planInsertActivity = pyqtSignal()
-    planDeleteActivities = pyqtSignal()
+    planAddActivity = pyqtSignal(int, bool)
+    planDeleteActivities = pyqtSignal(list)
 
     statsWindowRequested = pyqtSignal()
 
     tasklistNewTask = pyqtSignal()
-    tasklistDeleteTasks = pyqtSignal()
+    tasklistDeleteTasks = pyqtSignal(list)
 
     appExitRequested = pyqtSignal()
 
@@ -59,24 +58,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionNew_Plan.triggered.connect(self.planNewRequested)
         self.actionImport_Tasks.triggered.connect(self.tasklistImportRequested)
         self.actionExport_Tasklist.triggered.connect(
-            lambda: self.tasklistExportRequested.emit(True)
+            lambda: self.tasklistExportRequested.emit(
+                self._get_selected_tasklist_indices(),
+                True
+            )
         )
         self.actionImport_Activities.triggered.connect(self.planImportRequested)
         self.actionExport_Plan.triggered.connect(
-            lambda: self.planExportRequested.emit(True)
+            lambda: self.planExportRequested.emit(
+                self._get_selected_plan_indices(),
+                True
+            )
         )
 
         self.actionStart_now.triggered.connect(
             lambda: self.planStartRequested.emit(False)
         )
         self.actionStart_Plan_from_Here_Now.triggered.connect(
-            lambda: self.planStartFromSelectedRequested.emit(False)
+            lambda: self.planStartFromSelectedRequested.emit(
+                self._get_selected_plan_indices(),
+                False
+            )
         )
         self.actionStart_Plan_Preemptively.triggered.connect(
             lambda: self.planStartRequested.emit(True)
         )
         self.actionStart_Plan_from_Here_Preemptively.triggered.connect(
-            lambda: self.planStartFromSelectedRequested.emit(True)
+            lambda: self.planStartFromSelectedRequested.emit(
+                self._get_selected_plan_indices(),
+                True
+            )
         )
         self.actionEnd.triggered.connect(
             lambda: self.planEndRequested.emit(False)
@@ -90,18 +101,42 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionPlan_Archive.triggered.connect(self.planArchiveRequested)
         self.actionShow_Statistics.triggered.connect(self.statsWindowRequested)
 
-        self.actionAdd_New_Activity.triggered.connect(self.planAppendActivity)
-        self.actionInsert_New_Activity.triggered.connect(self.planInsertActivity)
-        self.actionExport_Selected_Activities.triggered.connect(
-            lambda: self.planExportRequested.emit(False)
+        self.actionAdd_New_Activity.triggered.connect(
+            lambda: self.planAddActivity.emit(
+                self._get_first_selected_plan_index(),
+                True
+            )
         )
-        self.actionDelete_Selected_Activities.triggered.connect(self.planDeleteActivities)
+        self.actionInsert_New_Activity.triggered.connect(
+            lambda: self.planAddActivity.emit(
+                self._get_first_selected_plan_index(),
+                False
+            )
+        )
+        self.actionExport_Selected_Activities.triggered.connect(
+            lambda: self.planExportRequested.emit(
+                self._get_selected_plan_indices(),
+                False
+            )
+        )
+        self.actionDelete_Selected_Activities.triggered.connect(
+            lambda: self.planDeleteActivities.emit(
+                self._get_selected_plan_indices()
+            )
+        )
 
         self.actionNew_Task.triggered.connect(self.tasklistNewTask)
         self.actionExport_Selected_Tasks.triggered.connect(
-            lambda: self.tasklistExportRequested.emit(False)
+            lambda: self.tasklistExportRequested.emit(
+                self._get_selected_tasklist_indices(),
+                False
+            )
         )
-        self.actionDelete_Selected_Tasks.triggered.connect(self.tasklistDeleteTasks)
+        self.actionDelete_Selected_Tasks.triggered.connect(
+            lambda: self.tasklistDeleteTasks.emit(
+                self._get_selected_tasklist_indices()
+            )
+        )
 
         # Button Actions
         self.pushButton_start_now.clicked.connect(
@@ -115,7 +150,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_archive.clicked.connect(self.planArchiveRequested)
 
         self.pushButton_new_task.clicked.connect(self.tasklistNewTask)
-        self.pushButton_add_activity.clicked.connect(self.planAppendActivity)
+        self.pushButton_add_activity.clicked.connect(
+            lambda: self.planAddActivity.emit(
+                self._get_selected_plan_indices(),
+                True
+            )
+        )
 
         # Other widgets
         self.tasklist_filter.textEdited.connect(self.filter_tasklist)
@@ -236,10 +276,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.update_title()
 
-    def get_selected_plan_indices(self):
+    def _get_selected_plan_indices(self):
         return sorted([index.row() for index in self.table_plan.selectionModel().selectedRows()])
 
-    def get_selected_tasklist_indices(self):
+    def _get_first_selected_plan_index(self):
+        selected_indices = self._get_selected_plan_indices()
+        return selected_indices[0] if selected_indices else None
+
+    def _get_selected_tasklist_indices(self):
         return sorted([index.row() for index in self.table_tasklist.selectionModel().selectedRows()])
 
     def filter_tasklist(self, query):
