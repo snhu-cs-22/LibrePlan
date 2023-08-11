@@ -100,7 +100,6 @@ class PlanTableModel(QAbstractTableModel):
     def __init__(self, parent, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self._activities = []
-        self._fixed_indices = []
         self._current_activity_index = 0
 
         self.query_count = Database.get_prepared_query(queries.count)
@@ -307,8 +306,8 @@ class PlanTableModel(QAbstractTableModel):
 
     def calculate(self):
         if self._activities:
-            self._set_actual_lengths()
-            self._set_optimal_lengths()
+            self._calculate_actual_lengths()
+            self._calculate_optimal_lengths()
             self._calculate_non_fixed_times()
 
     # Private methods
@@ -316,25 +315,23 @@ class PlanTableModel(QAbstractTableModel):
 
     def _calculate_optimum_factor(self, block_start, block_end):
         """Calculates the amount to compress or expand a block of
-        activities to make it fit into the time allocated"""
+        activities to make it fit in between two fixed times"""
 
-        block_size = self._activities[block_start].start_time.secsTo(self._activities[block_end].start_time) / 60
-        block_lengths = 0
+        block = self._activities[block_start:block_end]
 
-        for activity in self._activities[block_start:block_end]:
-            if activity.is_rigid:
-                block_size = block_size - activity.length
-            else:
-                block_lengths = block_lengths + activity.length
+        actual_size = self._activities[block_start].start_time.secsTo(self._activities[block_end].start_time) / 60
+        # Rigid activities can't be compressed or expanded,
+        # so they are not accounted for in the block's size
+        actual_size -= sum(a.length for a in block if a.is_rigid)
 
-        if block_lengths != 0:
-            factor = block_size / block_lengths
+        planned_size = sum(a.length for a in block if not a.is_rigid)
+
+        if planned_size != 0:
+            return actual_size / planned_size
         else:
-            factor = 1
+            return 1.0
 
-        return factor
-
-    def _set_optimal_lengths(self):
+    def _calculate_optimal_lengths(self):
         factor = self._calculate_optimum_factor(0, -1)
         for activity in self._activities:
             if activity.is_rigid:
@@ -342,13 +339,32 @@ class PlanTableModel(QAbstractTableModel):
             else:
                 activity.optimal_length = floor(activity.length * factor)
 
-    def _set_actual_lengths(self):
-        self._fixed_indices = [i for i, activity in enumerate(self._activities) if activity.is_fixed]
+    def _calculate_actual_lengths(self):
+        """
+        Activity ActLens are calculated by breaking down the list of
+        activities into "blocks" whose boundaries are determined by the
+        fixed activities in the list. Inside each of these blocks, the
+        activities' ActLens are calculated by expanding or compressing
+        their Lengths by the local optimal factor.
 
-        # Use fixed points after current activity to define blocks to calculate local OptLens
-        for i in range(self._current_activity_index, len(self._fixed_indices) - 1):
-            block_start = self._fixed_indices[i]
-            block_end = self._fixed_indices[i + 1]
+        The first and last activities in the list, as well as the current
+        activity when the schedule is running, are always considered fixed.
+        """
+
+        fixed_indices = [0, len(self._activities) - 1]
+        fixed_indices[1:-1] = [
+            i for i, activity in enumerate(self._activities)
+            if activity.is_fixed
+        ][1:-1]
+
+        current_fixed_indices = [self._current_activity_index]
+        current_fixed_indices.extend(
+            [index for index in fixed_indices if index > self._current_activity_index]
+        )
+
+        for i in range(len(current_fixed_indices) - 1):
+            block_start = current_fixed_indices[i]
+            block_end = current_fixed_indices[i + 1]
 
             factor = self._calculate_optimum_factor(block_start, block_end)
             for activity in self._activities[block_start:block_end]:
@@ -359,8 +375,10 @@ class PlanTableModel(QAbstractTableModel):
 
     def _calculate_non_fixed_times(self):
         for i in range(self._current_activity_index + 1, len(self._activities) - 1):
-            if not self._activities[i].is_fixed:
-                self._activities[i].start_time = self._activities[i - 1].start_time.addSecs(self._activities[i - 1].actual_length * 60)
+            current = self._activities[i]
+            prev = self._activities[i - 1]
+            if not current.is_fixed:
+                current.start_time = prev.start_time.addSecs(prev.actual_length * 60)
 
     def _read_activities(self):
         self._activities = []
