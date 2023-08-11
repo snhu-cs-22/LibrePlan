@@ -112,8 +112,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Other widgets
         self.tasklist_filter.textEdited.connect(self.filter_tasklist)
 
-        self.tray_icon.activated.connect(self.icon_activated)
-        self.tray_icon.messageClicked.connect(self.icon_message_clicked)
+        self.tray_icon.activated.connect(self.show)
+        self.tray_icon.messageClicked.connect(self.show)
 
         self.table_tasklist.model().layoutChanged.connect(self.update_title)
         self.table_plan.model().layoutChanged.connect(self.update_title)
@@ -198,13 +198,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tray_icon_menu = QMenu(self)
         self.tray_icon_menu.addAction(self.actionExit)
         self.tray_icon.setContextMenu(self.tray_icon_menu)
-
-    def icon_activated(self, reason):
-        if reason == QSystemTrayIcon.DoubleClick:
-            self.show()
-
-    def icon_message_clicked(self):
-        self.show()
 
     def _message_activity_end(self, current_activity):
         self.tray_icon.showMessage(
