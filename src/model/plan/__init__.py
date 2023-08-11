@@ -277,7 +277,6 @@ class PlanTableModel(QAbstractTableModel):
             ),
             self._get_current_time_rounded()
         )
-        self.layoutChanged.emit()
 
     def complete_activity(self, preemptive=False):
         current_activity = self.get_current_activity()
@@ -294,6 +293,8 @@ class PlanTableModel(QAbstractTableModel):
                 ),
                 length
             )
+
+            self.set_current_activity_start_time()
 
         self.layoutChanged.emit()
 
