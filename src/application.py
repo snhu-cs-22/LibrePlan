@@ -57,13 +57,13 @@ class Application(QApplication):
         self.main_window.planInterruptRequested.connect(self.plan_interrupt)
         self.main_window.planAbortRequested.connect(self.plan_abort)
 
-        self.main_window.planAddActivity.connect(self.add_activity)
-        self.main_window.planDeleteActivities.connect(self.delete_activities)
+        self.main_window.planInsertActivity.connect(self.plan.insert_activity)
+        self.main_window.planDeleteActivities.connect(self.plan.delete_activities)
 
         self.main_window.statsWindowRequested.connect(self.show_stats_dialog)
 
-        self.main_window.tasklistNewTask.connect(self.add_task)
-        self.main_window.tasklistDeleteTasks.connect(self.delete_tasks)
+        self.main_window.tasklistNewTask.connect(self.tasklist.add_task)
+        self.main_window.tasklistDeleteTasks.connect(self.tasklist.delete_tasks)
 
         self.main_window.appExitRequested.connect(self.exit_app)
 
@@ -220,29 +220,6 @@ class Application(QApplication):
     def plan_abort(self):
         self.timer_countdown.stop()
         self.send_window_title_update_signal()
-
-    # Model handling
-    ################################################################################
-
-    def add_activity(self, index, append):
-        if not index:
-            insertion_point = self.plan.rowCount()
-        elif append:
-            insertion_point = index + 1
-        else:
-            insertion_point = index
-        self.plan.insert_activity(insertion_point, Activity())
-
-    def delete_activities(self, indices):
-        if indices:
-            self.plan.delete_activities(indices)
-
-    def add_task(self):
-        self.tasklist.add_task(Task())
-
-    def delete_tasks(self, indices):
-        if indices:
-            self.tasklist.delete_tasks(indices)
 
     # App exit
     ################################################################################

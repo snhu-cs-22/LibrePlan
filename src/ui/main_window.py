@@ -32,7 +32,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     planReplaceRequested = pyqtSignal()
     planAbortRequested = pyqtSignal()
 
-    planAddActivity = pyqtSignal(int, bool)
+    planInsertActivity = pyqtSignal(int)
     planDeleteActivities = pyqtSignal(list)
 
     statsWindowRequested = pyqtSignal()
@@ -109,15 +109,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionShow_Statistics.triggered.connect(self.statsWindowRequested)
 
         self.actionAdd_New_Activity.triggered.connect(
-            lambda: self.planAddActivity.emit(
-                self._get_first_selected_plan_index(),
-                True
+            lambda: self.planInsertActivity.emit(
+                self._get_plan_insertion_index(True)
             )
         )
         self.actionInsert_New_Activity.triggered.connect(
-            lambda: self.planAddActivity.emit(
-                self._get_first_selected_plan_index(),
-                False
+            lambda: self.planInsertActivity.emit(
+                self._get_plan_insertion_index(False)
             )
         )
         self.actionExport_Selected_Activities.triggered.connect(
@@ -157,9 +155,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.pushButton_new_task.clicked.connect(self.tasklistNewTask)
         self.pushButton_add_activity.clicked.connect(
-            lambda: self.planAddActivity.emit(
-                self._get_selected_plan_indices(),
-                True
+            lambda: self.planInsertActivity.emit(
+                self._get_plan_insertion_index(True)
             )
         )
 
@@ -314,6 +311,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _get_selected_plan_indices(self):
         return sorted([index.row() for index in self.table_plan.selectionModel().selectedRows()])
+
+    def _get_plan_insertion_index(self, append):
+        index = self._get_first_selected_plan_index()
+        if index is None:
+            return self.table_plan.model().rowCount()
+
+        if append:
+            index += 1
+
+        return index
 
     def _get_first_selected_plan_index(self):
         selected_indices = self._get_selected_plan_indices()

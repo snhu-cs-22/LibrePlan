@@ -174,7 +174,9 @@ class TasklistTableModel(QAbstractTableModel):
     def get_task(self, index):
         return self._tasks[index]
 
-    def add_task(self, task):
+    def add_task(self, task=None):
+        if task is None:
+            task = Task()
         self.add_tasks([task])
 
     def add_tasks(self, tasks):

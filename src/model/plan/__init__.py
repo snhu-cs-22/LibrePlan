@@ -128,7 +128,9 @@ class PlanTableModel(QAbstractTableModel):
     def get_following_activity(self):
         return self._activities[self._current_activity_index + 1]
 
-    def insert_activity(self, index, activity):
+    def insert_activity(self, index, activity=None):
+        if activity is None:
+            activity = Activity()
         self.insert_activities(index, [activity])
 
     def insert_activities(self, index, activities):
