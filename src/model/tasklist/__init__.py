@@ -80,6 +80,8 @@ class Task:
 
     COLUMN_INDICES = dict([(col["attr"], i) for i, col in enumerate(COLUMNS)])
 
+    EDITABLE_COLUMNS = [i for i, col in enumerate(COLUMNS) if col["user_editable"]]
+
     def __init__(self,
         id=None,
         name="Task",
@@ -332,8 +334,7 @@ class TasklistTableModel(QAbstractTableModel):
             return True
 
     def flags(self, index):
-        editable_columns = [i for i, col in enumerate(Task.COLUMNS) if col["user_editable"]]
-        if index.column() in editable_columns:
+        if index.column() in Task.EDITABLE_COLUMNS:
             return super().flags(index) | Qt.ItemIsEditable
         return super().flags(index)
 

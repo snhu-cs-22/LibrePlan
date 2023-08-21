@@ -73,6 +73,8 @@ class Activity:
 
     COLUMN_INDICES = dict([(col["attr"], i) for i, col in enumerate(COLUMNS)])
 
+    EDITABLE_COLUMNS = [i for i, col in enumerate(COLUMNS) if col["user_editable"]]
+
     def __init__(self,
         id=None,
         name="Activity",
@@ -484,8 +486,7 @@ class PlanTableModel(QAbstractTableModel):
             return True
 
     def flags(self, index):
-        editable_columns = [i for i, col in enumerate(Activity.COLUMNS) if col["user_editable"]]
-        if index.column() in editable_columns and index.row() >= self._current_activity_index:
+        if index.column() in Activity.EDITABLE_COLUMNS and index.row() >= self._current_activity_index:
             return super().flags(index) | Qt.ItemIsEditable
         return super().flags(index)
 
