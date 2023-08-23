@@ -1,13 +1,20 @@
 from typing import Callable, Sequence, Tuple, List
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, QEvent, QTime, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import (
+    Qt,
+    QRegularExpression,
+    QEvent,
+    QTime,
+    pyqtSignal,
+    pyqtSlot,
+)
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut, QSystemTrayIcon
 
 from model.config import Config
 from model.plan import PlanTableModel, Activity
-from model.tasklist import TasklistTableModel, Task
+from model.tasklist import TasklistTableModel, TasklistProxyModel, Task
 from ui.forms.main_window import Ui_MainWindow
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -162,7 +169,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tray_icon.activated.connect(self.show)
         self.tray_icon.messageClicked.connect(self.show)
 
-        self.table_tasklist.model().layoutChanged.connect(self.update_title)
+        self._tasklist_proxy.sourceModel().layoutChanged.connect(self.update_title)
         self.table_plan.model().layoutChanged.connect(self.update_title)
 
         self.table_tasklist.selectionModel().selectionChanged.connect(
@@ -271,7 +278,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Tasklist
 
-        self.table_tasklist.setModel(tasklist_model)
+        self._tasklist_proxy = TasklistProxyModel(self)
+        self._tasklist_proxy.setSourceModel(tasklist_model)
+
+        self.table_tasklist.setModel(self._tasklist_proxy)
+
         for i, col in enumerate(Task.COLUMNS):
             self.table_tasklist.setItemDelegateForColumn(i, col["delegate"](self))
 
@@ -296,11 +307,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         return selected_indices[0] if selected_indices else None
 
     def _get_selected_tasklist_indices(self):
-        return sorted([index.row() for index in self.table_tasklist.selectionModel().selectedRows()])
+        return sorted(
+            [self._tasklist_proxy.mapToSource(index).row()
+            for index in self.table_tasklist.selectionModel().selectedRows()]
+        )
 
     def filter_tasklist(self, query):
-        print("TODO: Implement tasklist filtering functionality")
-        print(f"Text query: {query}")
+        self._tasklist_proxy.setFilterRegularExpression(
+            QRegularExpression(
+                query,
+                QRegularExpression.CaseInsensitiveOption
+                | QRegularExpression.UseUnicodePropertiesOption
+            )
+        )
+        count = self._tasklist_proxy.rowCount()
+        self.statusbar.showMessage(f"{count} tasks found")
 
     def show_selection_count(self, selection_model):
         count = len(selection_model.selectedRows())
@@ -308,7 +329,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def update_title(self):
         activity_count = self.table_plan.model().rowCount() - 1
-        task_count = self.table_tasklist.model().rowCount()
+        task_count = self._tasklist_proxy.sourceModel().rowCount()
 
         self.setWindowTitle(f"{activity_count} Activities, {task_count} Tasks - LibrePlan")
         self.tray_icon.setToolTip(self.windowTitle())
@@ -332,7 +353,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         menu.exec_(gpos)
 
     def _populate_header_context_menu(self, table_view, menu):
-        table_model = table_view.model()
+        if isinstance(table_view.model(), TasklistProxyModel):
+            table_model = table_view.model().sourceModel()
+        else:
+            table_model = table_view.model()
+
         for i in range(table_model.columnCount()):
             action = menu.addAction(table_model.headerData(i))
             action.setCheckable(True)

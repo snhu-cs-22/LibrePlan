@@ -150,6 +150,7 @@ class PlanTableModel(QAbstractTableModel):
             self.query_insert.bindValue(":is_fixed", [a.is_fixed for a in activities])
             self.query_insert.bindValue(":is_rigid", [a.is_rigid for a in activities])
             if Database.execute_batch_query(self.query_insert):
+                self.layoutAboutToBeChanged.emit()
                 self._activities[index:index] = activities
                 self.calculate()
                 self.layoutChanged.emit()
@@ -188,14 +189,15 @@ class PlanTableModel(QAbstractTableModel):
         self.query_decrement.bindValue(":deletion_index", list(reversed(valid_indices)))
         Database.execute_batch_query(self.query_decrement)
 
+        self.layoutAboutToBeChanged.emit()
         self._activities = [a for i, a in enumerate(self._activities) if i not in valid_indices]
-
         self.calculate()
         self.layoutChanged.emit()
 
     def clear(self):
-        self._activities = []
         Database.execute_query(self.query_clear)
+        self.layoutAboutToBeChanged.emit()
+        self._activities = []
         self.layoutChanged.emit()
 
     def move_activity(self, index, new_index):
@@ -224,6 +226,7 @@ class PlanTableModel(QAbstractTableModel):
 
         Database.execute_batch_query(query_import)
 
+        self.layoutAboutToBeChanged.emit()
         self._read_activities()
         self.layoutChanged.emit()
 
@@ -256,7 +259,11 @@ class PlanTableModel(QAbstractTableModel):
         # The final activity marks the end of the plan, so we stop one before the end
         final_activity_index = self.rowCount() - 1
         if index <= final_activity_index:
+            # layoutChanged is emitted so the view is updated visually
+            self.layoutAboutToBeChanged.emit()
             self._current_activity_index = index
+            self.layoutChanged.emit()
+
             Config.set_setting("current_activity_index", index)
 
     def set_current_activity_start_time(self):
@@ -285,8 +292,6 @@ class PlanTableModel(QAbstractTableModel):
             )
 
             self.set_current_activity_start_time()
-
-        self.layoutChanged.emit()
 
     def complete(self):
         self._archive()

@@ -1,7 +1,14 @@
 import json
 from enum import Enum, auto
 
-from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QDate, QDateTime
+from PyQt5.QtCore import (
+    Qt,
+    QAbstractTableModel,
+    QSortFilterProxyModel,
+    QModelIndex,
+    QDate,
+    QDateTime
+)
 
 from model.database import Database
 from model.importing import ReplaceOption
@@ -15,6 +22,9 @@ class DeadlineType(Enum):
     DECLINE = auto()
     POSTDATE = auto()
     POSTDECLINE = auto()
+
+    def __lt__(self, other):
+        return self.value < other.value
 
 class Task:
     COLUMNS = [
@@ -159,7 +169,7 @@ class TasklistTableModel(QAbstractTableModel):
         self.query_delete = Database.get_prepared_query(queries.delete_task)
         self.query_clear = Database.get_prepared_query(queries.delete_all_tasks)
 
-        self.read_tasks()
+        self._read_tasks()
 
     def get_task(self, index):
         return self._tasks[index]
@@ -181,8 +191,8 @@ class TasklistTableModel(QAbstractTableModel):
         self.query_create.bindValue(":deadline", [t.deadline for t in tasks])
         self.query_create.bindValue(":deadline_type", [t.deadline_type.value for t in tasks])
         if Database.execute_batch_query(self.query_create):
+            self.layoutAboutToBeChanged.emit()
             self._tasks.extend(tasks)
-            self.calculate()
             self.layoutChanged.emit()
 
     def delete_tasks(self, indices):
@@ -190,25 +200,22 @@ class TasklistTableModel(QAbstractTableModel):
         self.query_delete.bindValue(":id", ids)
         Database.execute_batch_query(self.query_delete)
 
+        self.layoutAboutToBeChanged.emit()
         self._tasks = [t for i, t in enumerate(self._tasks) if i not in indices]
-
         self.layoutChanged.emit()
 
     def clear(self):
-        self._tasks = []
         Database.execute_query(self.query_clear)
+        self.layoutAboutToBeChanged.emit()
+        self._tasks = []
         self.layoutChanged.emit()
 
-    def calculate(self):
-        self._tasks.sort(key = lambda task: task.get_priority(), reverse = True)
-
-    def read_tasks(self):
+    def _read_tasks(self):
         self._tasks = []
         Database.execute_query(self.query_read)
         while self.query_read.next():
             task = self._get_task_from_db()
             self._tasks.append(task)
-        self.calculate()
 
     def import_tasks(self, path, replace_option):
         if replace_option == ReplaceOption.REPLACE:
@@ -231,7 +238,8 @@ class TasklistTableModel(QAbstractTableModel):
 
         Database.execute_batch_query(query_import)
 
-        self.read_tasks()
+        self.layoutAboutToBeChanged.emit()
+        self._read_tasks()
         self.layoutChanged.emit()
 
     def export_tasks(self, path, indices=[]):
@@ -316,7 +324,6 @@ class TasklistTableModel(QAbstractTableModel):
             self.query_update.bindValue(":deadline_type", task.deadline_type.value)
             Database.execute_query(self.query_update)
 
-            self.calculate()
             self.dataChanged.emit(index, index)
             return True
 
@@ -325,3 +332,20 @@ class TasklistTableModel(QAbstractTableModel):
         if index.column() in editable_columns:
             return super().flags(index) | Qt.ItemIsEditable
         return super().flags(index)
+
+class TasklistProxyModel(QSortFilterProxyModel):
+    """Special proxy model class for use with TasklistTableModel
+
+    This proxy model implements lessThan() for data types not covered
+    by the base implementation of QSortFilterProxyModel.
+
+    Classes must have the '<' operator implemented in order to be
+    properly sorted by the model.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setFilterKeyColumn(Task.COLUMN_INDICES["name"])
+
+    def lessThan(self, source_left, source_right):
+        return source_left.data() < source_right.data()
