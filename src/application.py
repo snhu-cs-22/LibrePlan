@@ -72,6 +72,7 @@ class Application(QApplication):
         self.main_window.tasklistNewTask.connect(self.tasklist.add_task)
         self.main_window.tasklistDeleteTasks.connect(self.tasklist.delete_tasks)
 
+        self.main_window.backupRestoreRequested.connect(self.restore_backup)
         self.main_window.appExitRequested.connect(self.exit_app)
 
         # Plan Handler
@@ -102,3 +103,7 @@ class Application(QApplication):
 
     def exit_app_unexpected(self):
         super().exit(1)
+
+    def restore_backup(self, path):
+        self.backup.restore(path)
+        super().exit(6)

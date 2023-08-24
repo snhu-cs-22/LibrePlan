@@ -48,6 +48,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     tasklistNewTask = pyqtSignal()
     tasklistDeleteTasks = pyqtSignal(list)
 
+    backupRestoreRequested = pyqtSignal(str)
     appExitRequested = pyqtSignal()
 
     def __init__(self, application, config, *args, **kwargs):
@@ -71,6 +72,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _connectSignals(self):
         # Menu Actions
         self.actionAbout.triggered.connect(self.show_about_dialog)
+        self.actionRestore_Backup.triggered.connect(self.restore_backup_dialog)
         self.actionExit.triggered.connect(self.appExitRequested)
         self.actionNew_Plan.triggered.connect(self.new_plan_dialog)
         self.actionImport_Tasks.triggered.connect(self.import_tasks_dialog)
@@ -310,6 +312,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         if ok and input_text:
             self.planReplaceRequested.emit(input_text)
+
+    def restore_backup_dialog(self):
+        path = QFileDialog.getOpenFileName(
+            self,
+            "Restore Backup",
+            self.application.PATH_BACKUPS
+        )[0]
+
+        if path:
+            dialog = QMessageBox.warning(
+                self,
+                "Restore from Backup?",
+                "Do you want to restore from backup and exit? A backup of the current database will be made.",
+                QMessageBox.Ok | QMessageBox.Cancel
+            )
+
+            if dialog == QMessageBox.Ok:
+                self.backupRestoreRequested.emit(path)
 
     # GUI stuff
     ################################################################################

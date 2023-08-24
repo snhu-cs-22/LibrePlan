@@ -33,3 +33,9 @@ class Backup:
         if len(backups) >= number_of_backups:
             for backup in backups[:-number_of_backups]:
                 QFile.remove(backup.absoluteFilePath())
+
+    def restore(self, path):
+        self.create()
+        self.database.disconnect()
+        QFile.remove(self.database.path)
+        QFile.copy(path, self.database.path)
