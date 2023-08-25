@@ -164,7 +164,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
 
         # Other widgets
-        self.tasklist_filter.textEdited.connect(self.filter_tasklist)
+        self.tasklist_filter.returnPressed.connect(self.filter_tasklist)
 
         self.tray_icon.activated.connect(self.show)
         self.tray_icon.messageClicked.connect(self.show)
@@ -312,10 +312,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             for index in self.table_tasklist.selectionModel().selectedRows()]
         )
 
-    def filter_tasklist(self, query):
+    def filter_tasklist(self):
         self._tasklist_proxy.setFilterRegularExpression(
             QRegularExpression(
-                query,
+                self.tasklist_filter.text(),
                 QRegularExpression.CaseInsensitiveOption
                 | QRegularExpression.UseUnicodePropertiesOption
             )

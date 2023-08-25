@@ -173,7 +173,7 @@
           <item>
            <widget class="QLineEdit" name="tasklist_filter">
             <property name="placeholderText">
-             <string>Filter...</string>
+             <string>Search tasks (type text, then press Enter)</string>
             </property>
             <property name="clearButtonEnabled">
              <bool>true</bool>
