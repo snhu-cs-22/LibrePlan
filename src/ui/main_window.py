@@ -10,20 +10,29 @@ from PyQt5.QtCore import (
     pyqtSlot,
 )
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QShortcut, QSystemTrayIcon
+from PyQt5.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QFileDialog,
+    QMessageBox,
+    QMenu,
+    QShortcut,
+    QSystemTrayIcon,
+)
 
 from model.config import Config
 from model.plan import PlanTableModel, Activity
 from model.tasklist import TasklistTableModel, TasklistProxyModel, Task
 from ui.forms.main_window import Ui_MainWindow
+from ui.importing import ImportDialog, ReplaceOption
+from ui.stats import StatsDialog
 
 class MainWindow(QMainWindow, Ui_MainWindow):
-    aboutDialogRequested = pyqtSignal()
     planNewRequested = pyqtSignal()
-    planImportRequested = pyqtSignal()
-    planExportRequested = pyqtSignal(list, bool)
-    tasklistImportRequested = pyqtSignal()
-    tasklistExportRequested = pyqtSignal(list, bool)
+    planImportRequested = pyqtSignal(str, dict)
+    planExportRequested = pyqtSignal(str, list)
+    tasklistImportRequested = pyqtSignal(str, dict)
+    tasklistExportRequested = pyqtSignal(str, list)
 
     planStartRequested = pyqtSignal(bool)
     planStartFromSelectedRequested = pyqtSignal(list, bool)
@@ -34,8 +43,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     planInsertActivity = pyqtSignal(int)
     planDeleteActivities = pyqtSignal(list)
-
-    statsWindowRequested = pyqtSignal()
 
     tasklistNewTask = pyqtSignal()
     tasklistDeleteTasks = pyqtSignal(list)
@@ -61,22 +68,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _connectSignals(self):
         # Menu Actions
-        self.actionAbout.triggered.connect(self.aboutDialogRequested)
+        self.actionAbout.triggered.connect(self.show_about_dialog)
         self.actionExit.triggered.connect(self.appExitRequested)
-        self.actionNew_Plan.triggered.connect(self.planNewRequested)
-        self.actionImport_Tasks.triggered.connect(self.tasklistImportRequested)
+        self.actionNew_Plan.triggered.connect(self.new_plan_dialog)
+        self.actionImport_Tasks.triggered.connect(self.import_tasks_dialog)
         self.actionExport_Tasklist.triggered.connect(
-            lambda: self.tasklistExportRequested.emit(
-                self._get_selected_tasklist_indices(),
-                True
-            )
+            lambda: self.export_tasks_dialog(True)
         )
-        self.actionImport_Activities.triggered.connect(self.planImportRequested)
+        self.actionImport_Activities.triggered.connect(self.import_activities_dialog)
         self.actionExport_Plan.triggered.connect(
-            lambda: self.planExportRequested.emit(
-                self._get_selected_plan_indices(),
-                True
-            )
+            lambda: self.export_activities_dialog(True)
         )
 
         self.actionStart_now.triggered.connect(
@@ -106,7 +107,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionInterrupt.triggered.connect(self.planInterruptRequested)
         self.actionReplace.triggered.connect(self.planReplaceRequested)
         self.actionAbort.triggered.connect(self.planAbortRequested)
-        self.actionShow_Statistics.triggered.connect(self.statsWindowRequested)
+        self.actionShow_Statistics.triggered.connect(self.show_stats_dialog)
 
         self.actionAdd_New_Activity.triggered.connect(
             lambda: self.planInsertActivity.emit(
@@ -119,10 +120,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             )
         )
         self.actionExport_Selected_Activities.triggered.connect(
-            lambda: self.planExportRequested.emit(
-                self._get_selected_plan_indices(),
-                False
-            )
+            lambda: self.export_activities_dialog(False)
         )
         self.actionDelete_Selected_Activities.triggered.connect(
             lambda: self.planDeleteActivities.emit(
@@ -132,10 +130,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.actionNew_Task.triggered.connect(self.tasklistNewTask)
         self.actionExport_Selected_Tasks.triggered.connect(
-            lambda: self.tasklistExportRequested.emit(
-                self._get_selected_tasklist_indices(),
-                False
-            )
+            lambda: self.export_tasks_dialog(False)
         )
         self.actionDelete_Selected_Tasks.triggered.connect(
             lambda: self.tasklistDeleteTasks.emit(
@@ -245,6 +240,64 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             scut.setAutoRepeat(False)
             qshortcuts.append(scut)
         return qshortcuts
+
+    # Dialogs
+    ################################################################################
+
+    def show_about_dialog(self):
+        text = (
+            "<center>"
+            "<h1>LibrePlan</h1>"
+            "<p>A simple, free and open-source day planner and to-do list.</p>"
+            "<p>Based on Plan and Tasklist Manager from SuperMemo.</p>"
+            "</center>"
+        )
+        QMessageBox.about(self, "About LibrePlan", text)
+
+    def show_stats_dialog(self):
+        self.stats_dialog = StatsDialog(self)
+        self.stats_dialog.show()
+
+    def import_tasks_dialog(self):
+        path = QFileDialog.getOpenFileName(self, "Import Tasks")[0]
+
+        if path:
+            options = ImportDialog.get_import_options(self)
+            if options:
+                self.tasklistImportRequested.emit(path, options)
+
+    def export_tasks_dialog(self, export_all):
+        path = QFileDialog.getSaveFileName(self, "Export Tasks")[0]
+
+        if path:
+            indices = [] if export_all else self._get_selected_tasklist_indices()
+            self.tasklistExportRequested.emit(path, indices)
+
+    def new_plan_dialog(self):
+        if self.table_plan.model().rowCount() != 0:
+            discard = QMessageBox.warning(
+                        self, "Discard Activities?",
+                        "There are activities in the current plan.\n\nWould you like to discard them?",
+                        QMessageBox.Ok | QMessageBox.Cancel
+                    )
+
+            if discard == QMessageBox.Ok:
+                self.planNewRequested.emit()
+
+    def import_activities_dialog(self):
+        path = QFileDialog.getOpenFileName(self, "Import Activities")[0]
+
+        if path:
+            options = ImportDialog.get_import_options(self)
+            if options:
+                self.planImportRequested.emit(path, options)
+
+    def export_activities_dialog(self, export_all):
+        path = QFileDialog.getSaveFileName(self, "Export Activities")[0]
+
+        if path:
+            indices = [] if export_all else self._get_selected_plan_indices()
+            self.planExportRequested.emit(path, indices)
 
     # GUI stuff
     ################################################################################

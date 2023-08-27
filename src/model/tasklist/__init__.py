@@ -11,7 +11,7 @@ from PyQt5.QtCore import (
 )
 
 from model.database import Database
-from model.importing import ReplaceOption
+from ui.importing import ReplaceOption
 from ui.item_delegates import GenericDelegate, DeadlineTypeDelegate, PercentDelegate
 
 import model.tasklist.queries as queries
@@ -219,10 +219,10 @@ class TasklistTableModel(QAbstractTableModel):
             task = self._get_task_from_db()
             self._tasks.append(task)
 
-    def import_tasks(self, path, replace_option):
-        if replace_option == ReplaceOption.REPLACE:
+    def import_tasks(self, path, options):
+        if options["replace_option"] == ReplaceOption.REPLACE:
             query_import = Database.get_prepared_query(queries.import_task_replace)
-        elif replace_option == ReplaceOption.ADD:
+        elif options["replace_option"] == ReplaceOption.ADD:
             query_import = Database.get_prepared_query(queries.import_task_add)
         else:
             query_import = Database.get_prepared_query(queries.import_task_ignore)

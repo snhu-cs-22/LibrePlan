@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QTime, QDateTime
 
 from model.config import Config
 from model.database import Database
-from model.importing import ReplaceOption
+from ui.importing import ReplaceOption
 from ui.item_delegates import GenericDelegate, BoolDelegate, PercentDelegate
 
 import model.plan.queries as queries
@@ -207,10 +207,10 @@ class PlanTableModel(QAbstractTableModel):
         self._activities.delete(index + 1)
         self.calculate()
 
-    def import_activities(self, path, replace_option):
-        if replace_option == ReplaceOption.REPLACE:
+    def import_activities(self, path, options):
+        if options["replace_option"] == ReplaceOption.REPLACE:
             query_import = Database.get_prepared_query(queries.import_activity_replace)
-        elif replace_option == ReplaceOption.ADD:
+        elif options["replace_option"] == ReplaceOption.ADD:
             query_import = Database.get_prepared_query(queries.import_activity_add)
         else:
             query_import = Database.get_prepared_query(queries.import_activity_ignore)

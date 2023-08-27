@@ -1,14 +1,12 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, QTimer, QTime, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox, QLineEdit
+from PyQt5.QtWidgets import QApplication, QInputDialog, QMessageBox
 
 from model.database import Database
 from model.plan import PlanTableModel, Activity
 from model.tasklist import TasklistTableModel, Task
-from ui.importing import ImportDialog
 from ui.main_window import MainWindow
-from ui.stats import StatsDialog
 
 class Application(QApplication):
     countdownUpdateRequested = pyqtSignal(int)
@@ -43,12 +41,11 @@ class Application(QApplication):
 
     def _connectSlots(self):
         # Main window
-        self.main_window.aboutDialogRequested.connect(self.show_about_dialog)
-        self.main_window.planNewRequested.connect(self.new_plan_dialog)
-        self.main_window.planImportRequested.connect(self.import_activities_dialog)
-        self.main_window.planExportRequested.connect(self.export_activities_dialog)
-        self.main_window.tasklistImportRequested.connect(self.import_tasks_dialog)
-        self.main_window.tasklistExportRequested.connect(self.export_tasks_dialog)
+        self.main_window.planNewRequested.connect(self.plan.clear)
+        self.main_window.planImportRequested.connect(self.plan.import_activities)
+        self.main_window.planExportRequested.connect(self.plan.export_activities)
+        self.main_window.tasklistImportRequested.connect(self.tasklist.import_tasks)
+        self.main_window.tasklistExportRequested.connect(self.tasklist.export_tasks)
 
         self.main_window.planStartRequested.connect(self.plan_start)
         self.main_window.planStartFromSelectedRequested.connect(self.plan_start_from_selected)
@@ -59,8 +56,6 @@ class Application(QApplication):
 
         self.main_window.planInsertActivity.connect(self.plan.insert_activity)
         self.main_window.planDeleteActivities.connect(self.plan.delete_activities)
-
-        self.main_window.statsWindowRequested.connect(self.show_stats_dialog)
 
         self.main_window.tasklistNewTask.connect(self.tasklist.add_task)
         self.main_window.tasklistDeleteTasks.connect(self.tasklist.delete_tasks)
@@ -80,61 +75,6 @@ class Application(QApplication):
 
         if dialog == QMessageBox.Ok:
             self.exit_app_unexpected()
-
-    def show_about_dialog(self):
-        text = (
-            "<center>"
-            "<h1>LibrePlan</h1>"
-            "<p>A simple, free and open-source day planner and to-do list.</p>"
-            "<p>Based on Plan and Tasklist Manager from SuperMemo.</p>"
-            "</center>"
-        )
-        QMessageBox.about(self.main_window, "About LibrePlan", text)
-
-    def show_stats_dialog(self):
-        self.stats_dialog = StatsDialog(self)
-        self.stats_dialog.show()
-
-    def import_tasks_dialog(self):
-        path = QFileDialog.getOpenFileName(None, "Import Tasks")[0]
-
-        if path:
-            self.import_dialog = ImportDialog(self.tasklist, path)
-
-    def export_tasks_dialog(self, indices, export_all):
-        path = QFileDialog.getSaveFileName(None, "Export Tasks")[0]
-
-        if path:
-            if export_all:
-                self.tasklist.export_tasks(path)
-            else:
-                self.tasklist.export_tasks(path, indices)
-
-    def new_plan_dialog(self):
-        if self.plan.rowCount() != 0:
-            discard = QMessageBox.warning(
-                        self.main_window, "Discard Activities?",
-                        "There are activities in the current plan.\n\nWould you like to discard them?",
-                        QMessageBox.Ok | QMessageBox.Cancel
-                    )
-
-            if discard == QMessageBox.Ok:
-                self.plan.clear()
-
-    def import_activities_dialog(self):
-        path = QFileDialog.getOpenFileName(None, "Import Activities")[0]
-
-        if path:
-            self.import_dialog = ImportDialog(self.plan, path)
-
-    def export_activities_dialog(self, indices, export_all):
-        path = QFileDialog.getSaveFileName(None, "Export Activities")[0]
-
-        if path:
-            if export_all:
-                self.plan.export_activities(path)
-            else:
-                self.plan.export_activities(path, indices)
 
     # Plan functionality
     ################################################################################
