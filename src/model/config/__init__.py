@@ -1,55 +1,51 @@
-from model.database import Database
+from model.storage import Database
 
 from model.config import queries
 
 class Config:
     """Interface for application settings"""
 
-    query_get = Database.get_prepared_query(queries.get_setting)
-    query_set = Database.get_prepared_query(queries.insert_setting)
+    def __init__(self, database):
+        self.database = database
+        self.query_get = self.database.get_prepared_query(queries.get_setting)
+        self.query_set = self.database.get_prepared_query(queries.insert_setting)
 
-    @classmethod
-    def get_setting(cls, key, default_value):
-        cls.query_get.bindValue(":key", key)
-        Database.execute_query(cls.query_get)
-        cls.query_get.first()
-        value = cls.query_get.value("value")
+    def get_setting(self, key, default_value):
+        self.query_get.bindValue(":key", key)
+        self.database.execute_query(self.query_get)
+        self.query_get.first()
+        value = self.query_get.value("value")
 
         if not value:
-            cls.set_setting(key, default_value)
+            self.set_setting(key, default_value)
             return default_value
 
         # Cast value to type of default value
         return type(default_value)(value)
 
-    @classmethod
-    def set_setting(cls, key, value):
-        cls.query_set.bindValue(":key", key)
-        cls.query_set.bindValue(":value", value)
-        Database.execute_query(cls.query_set)
+    def set_setting(self, key, value):
+        self.query_set.bindValue(":key", key)
+        self.query_set.bindValue(":value", value)
+        self.database.execute_query(self.query_set)
 
-    @classmethod
-    def get_state(cls, widget):
+    def get_state(self, widget):
         key = f"ui.{widget.objectName()}/state"
-        return cls.get_setting(
+        return self.get_setting(
             key,
             widget.saveState()
         )
 
-    @classmethod
-    def set_state(cls, widget):
+    def set_state(self, widget):
         key = f"ui.{widget.objectName()}/state"
-        cls.set_setting(key, widget.saveState())
+        self.set_setting(key, widget.saveState())
 
-    @classmethod
-    def get_geometry(cls, widget):
+    def get_geometry(self, widget):
         key = f"ui.{widget.objectName()}/geometry"
-        return cls.get_setting(
+        return self.get_setting(
             key,
             widget.saveGeometry()
         )
 
-    @classmethod
-    def set_geometry(cls, widget):
+    def set_geometry(self, widget):
         key = f"ui.{widget.objectName()}/geometry"
-        cls.set_setting(key, widget.saveGeometry())
+        self.set_setting(key, widget.saveGeometry())

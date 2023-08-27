@@ -17,7 +17,7 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         self.setWindowFlags(window_flags)
 
         self.application = application
-        self.model = StatsModel()
+        self.model = StatsModel(self.application.database)
 
         self.setupUi(self)
 

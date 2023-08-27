@@ -1,7 +1,6 @@
-from PyQt5.QtCore import QStandardPaths
 from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
-import model.storage.queries as queries
+from model.storage import queries
 
 class QueryError(Exception):
     def __init__(self, query):
@@ -15,43 +14,40 @@ class QueryError(Exception):
         super().__init__(message)
 
 class Database:
-    PATH_APPDATA = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation) + "/LibrePlan"
-    PATH_DB = PATH_APPDATA + "/collection.db"
-
-    connection = QSqlDatabase.addDatabase("QSQLITE")
-    connection.setHostName("libreplan")
+    """Data access object (DAO) for the application's database"""
 
     DATE_FORMAT = "yyyy-MM-dd"
     TIME_FORMAT = "hh:mm"
 
-    @classmethod
-    def connect(cls):
-        if not cls.connection.isOpen():
-            cls.connection.setDatabaseName(cls.PATH_DB)
-            connected = cls.connection.open()
+    def __init__(self, path):
+        self.path = path
+        self.connection = QSqlDatabase.addDatabase("QSQLITE")
+        self.connection.setHostName("libreplan")
+
+    def connect(self):
+        if not self.connection.isOpen():
+            self.connection.setDatabaseName(self.path)
+            connected = self.connection.open()
             if connected:
-                cls._create_tables()
+                self._create_tables()
             else:
-                e = cls.connection.lastError()
+                e = self.connection.lastError()
                 print(f"Failed to connect from database: {e.nativeErrorCode()} {e.type()} {e.text()}")
             return connected
         return True
 
-    @classmethod
-    def disconnect(cls):
-        if cls.connection.isOpen():
-            cls.connection.close()
+    def disconnect(self):
+        if self.connection.isOpen():
+            self.connection.close()
         else:
             print("Database connection is not open")
 
-    @staticmethod
-    def get_prepared_query(sql):
-        query = QSqlQuery()
+    def get_prepared_query(self, sql):
+        query = QSqlQuery(self.connection)
         query.prepare(sql)
         return query
 
-    @staticmethod
-    def execute_query(query):
+    def execute_query(self, query):
         """Executes a query with parameters bound to a single value.
 
         This method is good for running `SELECT` queries and queries
@@ -61,17 +57,16 @@ class Database:
         transaction handling.
         """
 
-        Database.connection.transaction()
+        self.connection.transaction()
         query_successful = query.exec_()
         if query_successful:
-            Database.connection.commit()
+            self.connection.commit()
         else:
-            Database.connection.rollback()
+            self.connection.rollback()
             raise QueryError(query)
         return query_successful
 
-    @staticmethod
-    def execute_batch_query(query):
+    def execute_batch_query(self, query):
         """Executes a query with parameters bound to a list of values.
 
         Good for running `INSERT`, `UPDATE`, and `DELETE` queries.
@@ -80,26 +75,23 @@ class Database:
         transaction handling.
         """
 
-        Database.connection.transaction()
+        self.connection.transaction()
         query_successful = query.execBatch()
         if query_successful:
-            Database.connection.commit()
+            self.connection.commit()
         else:
-            Database.connection.rollback()
+            self.connection.rollback()
             raise QueryError(query)
         return query_successful
 
-    @staticmethod
-    def _create_tables():
+    def _create_tables(self):
         table_queries = [
-            Database.get_prepared_query(queries.create_plan_table),
-            Database.get_prepared_query(queries.create_tasklist_table),
-            Database.get_prepared_query(queries.create_activity_table),
-            Database.get_prepared_query(queries.create_log_table),
-            Database.get_prepared_query(queries.create_config_table),
+            self.get_prepared_query(queries.create_plan_table),
+            self.get_prepared_query(queries.create_tasklist_table),
+            self.get_prepared_query(queries.create_activity_table),
+            self.get_prepared_query(queries.create_log_table),
+            self.get_prepared_query(queries.create_config_table),
         ]
 
         for query in table_queries:
-            Database.execute_query(query)
-
-Database.connect()
+            self.execute_query(query)

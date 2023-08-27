@@ -10,7 +10,7 @@ from PyQt5.QtCore import (
     QDateTime
 )
 
-from model.database import Database
+from model.storage import Database
 from ui.importing import ReplaceOption
 from ui.item_delegates import GenericDelegate, DeadlineTypeDelegate, PercentDelegate
 
@@ -158,16 +158,18 @@ class Task:
         setattr(self, Task.COLUMNS[index]["attr"], value)
 
 class TasklistTableModel(QAbstractTableModel):
-    def __init__(self, parent, *args):
+    def __init__(self, parent, database, config, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self._tasks = []
+        self.config = config
+        self.database = database
 
-        self.query_count = Database.get_prepared_query(queries.count)
-        self.query_create = Database.get_prepared_query(queries.insert_task)
-        self.query_read = Database.get_prepared_query(queries.get_tasks)
-        self.query_update = Database.get_prepared_query(queries.update_task)
-        self.query_delete = Database.get_prepared_query(queries.delete_task)
-        self.query_clear = Database.get_prepared_query(queries.delete_all_tasks)
+        self.query_count = self.database.get_prepared_query(queries.count)
+        self.query_create = self.database.get_prepared_query(queries.insert_task)
+        self.query_read = self.database.get_prepared_query(queries.get_tasks)
+        self.query_update = self.database.get_prepared_query(queries.update_task)
+        self.query_delete = self.database.get_prepared_query(queries.delete_task)
+        self.query_clear = self.database.get_prepared_query(queries.delete_all_tasks)
 
         self._read_tasks()
 
@@ -192,7 +194,7 @@ class TasklistTableModel(QAbstractTableModel):
         self.query_create.bindValue(":date_created", [t.DATE_CREATED for t in tasks])
         self.query_create.bindValue(":deadline", [t.deadline for t in tasks])
         self.query_create.bindValue(":deadline_type", [t.deadline_type.value for t in tasks])
-        if Database.execute_batch_query(self.query_create):
+        if self.database.execute_batch_query(self.query_create):
             self.layoutAboutToBeChanged.emit()
             self._tasks.extend(tasks)
             self.layoutChanged.emit()
@@ -200,32 +202,32 @@ class TasklistTableModel(QAbstractTableModel):
     def delete_tasks(self, indices):
         ids = [t.id for i, t in enumerate(self._tasks) if i in indices]
         self.query_delete.bindValue(":id", ids)
-        Database.execute_batch_query(self.query_delete)
+        self.database.execute_batch_query(self.query_delete)
 
         self.layoutAboutToBeChanged.emit()
         self._tasks = [t for i, t in enumerate(self._tasks) if i not in indices]
         self.layoutChanged.emit()
 
     def clear(self):
-        Database.execute_query(self.query_clear)
         self.layoutAboutToBeChanged.emit()
         self._tasks = []
+        self.database.execute_query(self.query_clear)
         self.layoutChanged.emit()
 
     def _read_tasks(self):
         self._tasks = []
-        Database.execute_query(self.query_read)
+        self.database.execute_query(self.query_read)
         while self.query_read.next():
             task = self._get_task_from_db()
             self._tasks.append(task)
 
     def import_tasks(self, path, options):
         if options["replace_option"] == ReplaceOption.REPLACE:
-            query_import = Database.get_prepared_query(queries.import_task_replace)
+            query_import = self.database.get_prepared_query(queries.import_task_replace)
         elif options["replace_option"] == ReplaceOption.ADD:
-            query_import = Database.get_prepared_query(queries.import_task_add)
+            query_import = self.database.get_prepared_query(queries.import_task_add)
         else:
-            query_import = Database.get_prepared_query(queries.import_task_ignore)
+            query_import = self.database.get_prepared_query(queries.import_task_ignore)
 
         with open(path) as f:
             tasks_json = json.load(f)
@@ -238,7 +240,7 @@ class TasklistTableModel(QAbstractTableModel):
             query_import.bindValue(":deadline", [t["deadline"] for t in tasks_json])
             query_import.bindValue(":deadline_type", [DeadlineType[t["deadline_type"]].value for t in tasks_json])
 
-        Database.execute_batch_query(query_import)
+        self.database.execute_batch_query(query_import)
 
         self.layoutAboutToBeChanged.emit()
         self._read_tasks()
@@ -292,7 +294,7 @@ class TasklistTableModel(QAbstractTableModel):
     ################################################################################
 
     def rowCount(self, parent=QModelIndex):
-        Database.execute_query(self.query_count)
+        self.database.execute_query(self.query_count)
         self.query_count.first()
         return self.query_count.value("count")
 
@@ -324,7 +326,7 @@ class TasklistTableModel(QAbstractTableModel):
             self.query_update.bindValue(":date_created", task.DATE_CREATED)
             self.query_update.bindValue(":deadline", task.deadline)
             self.query_update.bindValue(":deadline_type", task.deadline_type.value)
-            Database.execute_query(self.query_update)
+            self.database.execute_query(self.query_update)
 
             self.dataChanged.emit(index, index)
             return True

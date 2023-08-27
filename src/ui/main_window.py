@@ -50,14 +50,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     appExitRequested = pyqtSignal()
 
-    def __init__(self, application, *args, **kwargs):
+    def __init__(self, application, config, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.application = application
+        self.config = config
         self.tray_icon = QSystemTrayIcon(self)
 
         self.setupUi(self)
-        self.restoreState(Config.get_state(self))
-        self.restoreGeometry(Config.get_geometry(self))
+        self.restoreState(self.config.get_state(self))
+        self.restoreGeometry(self.config.get_geometry(self))
         self._setupTables(application.plan, application.tasklist)
         self._setupSystemTrayIcon()
         self._connectSignals()
@@ -246,7 +247,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QMessageBox.about(self, "About LibrePlan", text)
 
     def show_stats_dialog(self):
-        self.stats_dialog = StatsDialog(self)
+        self.stats_dialog = StatsDialog(self.application)
         self.stats_dialog.show()
 
     def import_tasks_dialog(self):
@@ -343,7 +344,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_plan.horizontalHeader().setSectionsMovable(True)
         self.table_plan.horizontalHeader().restoreState(
             bytes(
-                Config.get_setting(
+                self.config.get_setting(
                     "ui.plan/header_state",
                     self.table_plan.horizontalHeader().saveState()
                 )
@@ -364,7 +365,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_tasklist.horizontalHeader().setSectionsMovable(True)
         self.table_tasklist.horizontalHeader().restoreState(
             bytes(
-                Config.get_setting(
+                self.config.get_setting(
                     "ui.tasklist/header_state",
                     self.table_tasklist.horizontalHeader().saveState()
                 )
@@ -484,13 +485,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def hide(self):
         super().hide()
-        Config.set_state(self)
-        Config.set_geometry(self)
-        Config.set_setting(
+        self.config.set_state(self)
+        self.config.set_geometry(self)
+        self.config.set_setting(
             "ui.plan/header_state",
             self.table_plan.horizontalHeader().saveState()
         )
-        Config.set_setting(
+        self.config.set_setting(
             "ui.tasklist/header_state",
             self.table_tasklist.horizontalHeader().saveState()
         )

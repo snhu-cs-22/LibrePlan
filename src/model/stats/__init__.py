@@ -15,14 +15,15 @@ from PyQt5.QtCore import Qt, QDate, QTime, QDateTime
 from PyQt5.QtSql import QSqlQuery
 from PyQt5.QtWidgets import QApplication
 
-from model.database import Database
+from model.storage import Database
 
 import model.stats.queries as queries
 
 class StatsModel:
     """Provides charts and other summarized statistical data from the activity log."""
 
-    def __init__(self):
+    def __init__(self, database):
+        self.database = database
         self._filter_text = ""
         self._setupAxes()
         self._setupSeries()
@@ -34,7 +35,7 @@ class StatsModel:
 
     def get_activity_names(self):
         names = []
-        Database.execute_query(self.query_activity_names)
+        self.database.execute_query(self.query_activity_names)
         while self.query_activity_names.next():
             names.append(self.query_activity_names.value("name"))
 
@@ -184,19 +185,19 @@ class StatsModel:
     ################################################################################
 
     def _setupQueries(self):
-        self.query_activity_names = Database.get_prepared_query(queries.get_activity_names)
-        self.query_log_date_range = Database.get_prepared_query(queries.get_log_date_range)
+        self.query_activity_names = self.database.get_prepared_query(queries.get_activity_names)
+        self.query_log_date_range = self.database.get_prepared_query(queries.get_log_date_range)
 
-        self.query_pie = Database.get_prepared_query(queries.get_pie_chart)
+        self.query_pie = self.database.get_prepared_query(queries.get_pie_chart)
 
-        self.query_perf_axis_range = Database.get_prepared_query(queries.get_perf_axis_range)
-        self.query_perf = Database.get_prepared_query(queries.get_perf_chart)
+        self.query_perf_axis_range = self.database.get_prepared_query(queries.get_perf_axis_range)
+        self.query_perf = self.database.get_prepared_query(queries.get_perf_chart)
 
-        self.query_daily_axis_range = Database.get_prepared_query(queries.get_daily_axis_range)
-        self.query_daily_avg = Database.get_prepared_query(queries.get_daily_avg)
+        self.query_daily_axis_range = self.database.get_prepared_query(queries.get_daily_axis_range)
+        self.query_daily_avg = self.database.get_prepared_query(queries.get_daily_avg)
 
-        self.query_circadian_axis_range = Database.get_prepared_query(queries.get_circadian_axis_range)
-        self.query_circadian = Database.get_prepared_query(queries.get_circadian_chart)
+        self.query_circadian_axis_range = self.database.get_prepared_query(queries.get_circadian_axis_range)
+        self.query_circadian = self.database.get_prepared_query(queries.get_circadian_chart)
 
     def set_filter(self, text):
         self._filter_text = text
@@ -206,7 +207,7 @@ class StatsModel:
         self._date_to = date_to
 
     def _get_log_date_range(self):
-        Database.execute_query(self.query_log_date_range)
+        self.database.execute_query(self.query_log_date_range)
         self.query_log_date_range.first()
         if self.query_log_date_range.value(0) != "":
             self.min_date = QDate.fromString(
@@ -235,7 +236,7 @@ class StatsModel:
         self.query_pie.bindValue(":name", f"%{self._filter_text}%")
         self.query_pie.bindValue(":date_from", self._date_from)
         self.query_pie.bindValue(":date_to", self._date_to)
-        Database.execute_query(self.query_pie)
+        self.database.execute_query(self.query_pie)
 
         # Slices are appended in bulk to prevent re-rendering slowdown
         slices = []
@@ -255,7 +256,7 @@ class StatsModel:
         self.query_perf_axis_range.bindValue(":name", f"%{self._filter_text}%")
         self.query_perf_axis_range.bindValue(":date_from", self._date_from)
         self.query_perf_axis_range.bindValue(":date_to", self._date_to)
-        Database.execute_query(self.query_perf_axis_range)
+        self.database.execute_query(self.query_perf_axis_range)
 
         self.query_perf_axis_range.first()
         if self.query_perf_axis_range.value(0) != "":
@@ -280,7 +281,7 @@ class StatsModel:
         self.query_perf.bindValue(":name", f"%{self._filter_text}%")
         self.query_perf.bindValue(":date_from", self._date_from)
         self.query_perf.bindValue(":date_to", self._date_to)
-        Database.execute_query(self.query_perf)
+        self.database.execute_query(self.query_perf)
 
         # Names are appended in bulk to prevent the slowdown caused by re-rendering
         names = []
@@ -310,7 +311,7 @@ class StatsModel:
         self.query_daily_axis_range.bindValue(":name", f"%{self._filter_text}%")
         self.query_daily_axis_range.bindValue(":date_from", self._date_from)
         self.query_daily_axis_range.bindValue(":date_to", self._date_to)
-        Database.execute_query(self.query_daily_axis_range)
+        self.database.execute_query(self.query_daily_axis_range)
 
         self.query_daily_axis_range.first()
         if self.query_daily_axis_range.value(0) != "":
@@ -337,7 +338,7 @@ class StatsModel:
         self.query_daily_avg.bindValue(":name", f"%{self._filter_text}%")
         self.query_daily_avg.bindValue(":date_from", self._date_from)
         self.query_daily_avg.bindValue(":date_to", self._date_to)
-        Database.execute_query(self.query_daily_avg)
+        self.database.execute_query(self.query_daily_avg)
 
         while self.query_daily_avg.next():
             date = QDateTime(QDate.fromString(
@@ -360,7 +361,7 @@ class StatsModel:
         self.query_circadian_axis_range.bindValue(":name", f"%{self._filter_text}%")
         self.query_circadian_axis_range.bindValue(":date_from", self._date_from)
         self.query_circadian_axis_range.bindValue(":date_to", self._date_to)
-        Database.execute_query(self.query_circadian_axis_range)
+        self.database.execute_query(self.query_circadian_axis_range)
 
         self.query_circadian_axis_range.first()
         if self.query_circadian_axis_range.value(0) != "":
@@ -376,7 +377,7 @@ class StatsModel:
         self.query_circadian.bindValue(":name", f"%{self._filter_text}%")
         self.query_circadian.bindValue(":date_from", self._date_from)
         self.query_circadian.bindValue(":date_to", self._date_to)
-        Database.execute_query(self.query_circadian)
+        self.database.execute_query(self.query_circadian)
 
         while self.query_circadian.next():
             start_hour = self.query_circadian.value("hour")

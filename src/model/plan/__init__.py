@@ -13,8 +13,7 @@ from PyQt5.QtCore import (
     pyqtSlot,
 )
 
-from model.config import Config
-from model.database import Database
+from model.storage import Database
 from ui.importing import ReplaceOption
 from ui.item_delegates import GenericDelegate, BoolDelegate, PercentDelegate
 
@@ -108,21 +107,23 @@ class Activity:
         setattr(self, Activity.COLUMNS[index]["attr"], value)
 
 class PlanTableModel(QAbstractTableModel):
-    def __init__(self, parent, *args):
+    def __init__(self, parent, database, config, *args):
         QAbstractTableModel.__init__(self, parent, *args)
         self._activities = []
-        self._current_activity_index = Config.get_setting("current_activity_index", 0)
+        self.config = config
+        self.database = database
+        self._current_activity_index = self.config.get_setting("current_activity_index", 0)
 
-        self.query_count = Database.get_prepared_query(queries.count)
-        self.query_insert = Database.get_prepared_query(queries.insert_activity)
-        self.query_increment = Database.get_prepared_query(queries.reorder_after_insertion)
-        self.query_decrement = Database.get_prepared_query(queries.reorder_after_deletion)
-        self.query_read = Database.get_prepared_query(queries.get_activities)
-        self.query_update = Database.get_prepared_query(queries.update_activity)
-        self.query_delete = Database.get_prepared_query(queries.delete_activity)
-        self.query_clear = Database.get_prepared_query(queries.delete_all_activities)
-        self.query_archive_name = Database.get_prepared_query(queries.insert_into_activities)
-        self.query_insert_into_log = Database.get_prepared_query(queries.insert_into_log)
+        self.query_count = self.database.get_prepared_query(queries.count)
+        self.query_insert = self.database.get_prepared_query(queries.insert_activity)
+        self.query_increment = self.database.get_prepared_query(queries.reorder_after_insertion)
+        self.query_decrement = self.database.get_prepared_query(queries.reorder_after_deletion)
+        self.query_read = self.database.get_prepared_query(queries.get_activities)
+        self.query_update = self.database.get_prepared_query(queries.update_activity)
+        self.query_delete = self.database.get_prepared_query(queries.delete_activity)
+        self.query_clear = self.database.get_prepared_query(queries.delete_all_activities)
+        self.query_archive_name = self.database.get_prepared_query(queries.insert_into_activities)
+        self.query_insert_into_log = self.database.get_prepared_query(queries.insert_into_log)
 
         self._read_activities()
 
@@ -147,7 +148,7 @@ class PlanTableModel(QAbstractTableModel):
         if index >= self._current_activity_index:
             self.query_increment.bindValue(":insertion_index", index)
             self.query_increment.bindValue(":offset", len(activities))
-            Database.execute_query(self.query_increment)
+            self.database.execute_query(self.query_increment)
 
             max_id = QDateTime.currentDateTime().toMSecsSinceEpoch()
 
@@ -161,7 +162,7 @@ class PlanTableModel(QAbstractTableModel):
             self.query_insert.bindValue(":length", [a.length for a in activities])
             self.query_insert.bindValue(":is_fixed", [a.is_fixed for a in activities])
             self.query_insert.bindValue(":is_rigid", [a.is_rigid for a in activities])
-            if Database.execute_batch_query(self.query_insert):
+            if self.database.execute_batch_query(self.query_insert):
                 self.layoutAboutToBeChanged.emit()
                 self._activities[index:index] = activities
                 self.calculate()
@@ -196,10 +197,10 @@ class PlanTableModel(QAbstractTableModel):
 
         ids = [a.id for i, a in enumerate(self._activities) if i in valid_indices]
         self.query_delete.bindValue(":id", ids)
-        Database.execute_batch_query(self.query_delete)
+        self.database.execute_batch_query(self.query_delete)
 
         self.query_decrement.bindValue(":deletion_index", list(reversed(valid_indices)))
-        Database.execute_batch_query(self.query_decrement)
+        self.database.execute_batch_query(self.query_decrement)
 
         self.layoutAboutToBeChanged.emit()
         self._activities = [a for i, a in enumerate(self._activities) if i not in valid_indices]
@@ -207,9 +208,9 @@ class PlanTableModel(QAbstractTableModel):
         self.layoutChanged.emit()
 
     def clear(self):
-        Database.execute_query(self.query_clear)
         self.layoutAboutToBeChanged.emit()
         self._activities = []
+        self.database.execute_query(self.query_clear)
         self.layoutChanged.emit()
 
     def move_activity(self, index, new_index):
@@ -219,11 +220,11 @@ class PlanTableModel(QAbstractTableModel):
 
     def import_activities(self, path, options):
         if options["replace_option"] == ReplaceOption.REPLACE:
-            query_import = Database.get_prepared_query(queries.import_activity_replace)
+            query_import = self.database.get_prepared_query(queries.import_activity_replace)
         elif options["replace_option"] == ReplaceOption.ADD:
-            query_import = Database.get_prepared_query(queries.import_activity_add)
+            query_import = self.database.get_prepared_query(queries.import_activity_add)
         else:
-            query_import = Database.get_prepared_query(queries.import_activity_ignore)
+            query_import = self.database.get_prepared_query(queries.import_activity_ignore)
 
         with open(path) as f:
             activities_json = json.load(f)
@@ -236,7 +237,7 @@ class PlanTableModel(QAbstractTableModel):
             query_import.bindValue(":is_fixed", [a["is_fixed"] for a in activities_json])
             query_import.bindValue(":is_rigid", [a["is_rigid"] for a in activities_json])
 
-        Database.execute_batch_query(query_import)
+        self.database.execute_batch_query(query_import)
 
         self.layoutAboutToBeChanged.emit()
         self._read_activities()
@@ -276,7 +277,7 @@ class PlanTableModel(QAbstractTableModel):
             self._current_activity_index = index
             self.layoutChanged.emit()
 
-            Config.set_setting("current_activity_index", index)
+            self.config.set_setting("current_activity_index", index)
 
     def set_current_activity_start_time(self):
         self.setData(
@@ -391,7 +392,7 @@ class PlanTableModel(QAbstractTableModel):
 
     def _read_activities(self):
         self._activities = []
-        Database.execute_query(self.query_read)
+        self.database.execute_query(self.query_read)
         while self.query_read.next():
             activity = self._get_activity_from_db()
             self._activities.append(activity)
@@ -426,7 +427,7 @@ class PlanTableModel(QAbstractTableModel):
     def _archive(self):
         activities = self._activities[:-1]
         self.query_archive_name.bindValue(":name", [a.name for a in activities])
-        Database.execute_batch_query(self.query_archive_name)
+        self.database.execute_batch_query(self.query_archive_name)
 
         self.query_insert_into_log.bindValue(":order", [i for i, a in enumerate(activities)])
         self.query_insert_into_log.bindValue(":start_time", [a.start_time.toString(Database.TIME_FORMAT) for a in activities])
@@ -436,13 +437,13 @@ class PlanTableModel(QAbstractTableModel):
         self.query_insert_into_log.bindValue(":optimal_length", [a.optimal_length for a in activities])
         self.query_insert_into_log.bindValue(":is_fixed", [int(a.is_fixed) for a in activities])
         self.query_insert_into_log.bindValue(":is_rigid", [int(a.is_rigid) for a in activities])
-        Database.execute_batch_query(self.query_insert_into_log)
+        self.database.execute_batch_query(self.query_insert_into_log)
 
     # Qt API Implementation
     ################################################################################
 
     def rowCount(self, parent=QModelIndex):
-        Database.execute_query(self.query_count)
+        self.database.execute_query(self.query_count)
         self.query_count.first()
         return self.query_count.value("count")
 
@@ -475,7 +476,7 @@ class PlanTableModel(QAbstractTableModel):
             self.query_update.bindValue(":actual_length", activity.actual_length)
             self.query_update.bindValue(":is_fixed", activity.is_fixed)
             self.query_update.bindValue(":is_rigid", activity.is_rigid)
-            Database.execute_query(self.query_update)
+            self.database.execute_query(self.query_update)
 
             self.calculate()
             self.dataChanged.emit(index, index)

@@ -1,23 +1,42 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import Qt, QStandardPaths, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
-from model.database import Database
+from model.config import Config
+from model.storage import Database
 from model.plan import PlanTableModel, PlanHandler, Activity
 from model.tasklist import TasklistTableModel, Task
 from ui.main_window import MainWindow
 
 class Application(QApplication):
+    PATH_APPDATA = QStandardPaths.writableLocation(
+        QStandardPaths.AppDataLocation
+    ) + "/LibrePlan"
+    PATH_DB = PATH_APPDATA + "/collection.db"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.plan = PlanTableModel(self)
+        self.database = Database(self.PATH_DB)
+        if not self.database.connect():
+            self.db_open_failed_dialog()
+
+        self.config = Config(self.database)
+
+        self.plan = PlanTableModel(
+            self,
+            self.database,
+            self.config
+        )
+        self.tasklist = TasklistTableModel(
+            self,
+            self.database,
+            self.config
+        )
         self.plan_handler = PlanHandler(self.plan)
 
-        self.tasklist = TasklistTableModel(self)
-
-        self.main_window = MainWindow(self)
+        self.main_window = MainWindow(self, self.config)
 
         self._connectSlots()
         self.main_window.show()
