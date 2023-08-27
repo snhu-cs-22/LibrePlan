@@ -3,6 +3,7 @@ from PyQt5.QtCore import Qt, QStandardPaths, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
 from PyQt5.QtWidgets import QApplication, QMessageBox
 
+from model.backup import Backup
 from model.config import Config
 from model.storage import Database
 from model.plan import PlanTableModel, PlanHandler, Activity
@@ -14,6 +15,7 @@ class Application(QApplication):
         QStandardPaths.AppDataLocation
     ) + "/LibrePlan"
     PATH_DB = PATH_APPDATA + "/collection.db"
+    PATH_BACKUPS = PATH_APPDATA + "/backups"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -23,6 +25,11 @@ class Application(QApplication):
             self.db_open_failed_dialog()
 
         self.config = Config(self.database)
+        self.backup = Backup(
+            self.PATH_BACKUPS,
+            self.database,
+            self.config
+        )
 
         self.plan = PlanTableModel(
             self,
@@ -90,8 +97,8 @@ class Application(QApplication):
     ################################################################################
 
     def exit_app(self):
-        print("Program exited successfully.")
+        self.backup.create()
         super().exit(0)
 
     def exit_app_unexpected(self):
-        super.exit(1)
+        super().exit(1)

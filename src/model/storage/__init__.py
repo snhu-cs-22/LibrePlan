@@ -39,6 +39,7 @@ class Database:
     def disconnect(self):
         if self.connection.isOpen():
             self.connection.close()
+            QSqlDatabase.removeDatabase(self.path)
         else:
             print("Database connection is not open")
 
