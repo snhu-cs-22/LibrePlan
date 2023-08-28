@@ -219,10 +219,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _connectSlots(self):
         self.appExitRequested.connect(self.hide)
-        self.application.countdownUpdateRequested.connect(self.update_title_countdown)
-        self.application.titleUpdateRequested.connect(self.update_title)
-        self.application.planActivityEnded.connect(self._message_activity_end)
-        self.application.planActivityCompleted.connect(self._on_activity_completed)
 
     def _setupKeys(self):
         globalShortcuts = [
@@ -315,7 +311,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tray_icon_menu.addAction(self.actionExit)
         self.tray_icon.setContextMenu(self.tray_icon_menu)
 
-    def _message_activity_end(self, current_activity):
+    def activity_expired(self, current_activity):
+        self.tabWidget.setCurrentIndex(0)
         self.tray_icon.showMessage(
             f"Time's up for activity \"{current_activity.name}.\"",
             "Click \"Finish\" to stop countdown."
@@ -417,9 +414,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if secs >= 0:
             return QTime(0,0,0).addSecs(secs).toString(f"{time_format}")
         return QTime(0,0,0).addSecs(-secs).toString(f"-{time_format}")
-
-    def _on_activity_completed(self):
-        self.tabWidget.setCurrentIndex(0)
 
     def _show_context_menu(self, obj, menu, pos):
         gpos = obj.mapToGlobal(pos)

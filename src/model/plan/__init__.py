@@ -1,7 +1,17 @@
 import json
 from math import floor
 
-from PyQt5.QtCore import Qt, QAbstractTableModel, QModelIndex, QTime, QDateTime
+from PyQt5.QtCore import (
+    Qt,
+    QAbstractTableModel,
+    QObject,
+    QModelIndex,
+    QTimer,
+    QTime,
+    QDateTime,
+    pyqtSignal,
+    pyqtSlot,
+)
 
 from model.config import Config
 from model.database import Database
@@ -476,3 +486,76 @@ class PlanTableModel(QAbstractTableModel):
         if index.column() in editable_columns and index.row() >= self._current_activity_index:
             return super().flags(index) | Qt.ItemIsEditable
         return super().flags(index)
+
+class PlanHandler(QObject):
+    activityExpired = pyqtSignal(Activity)
+    activityStarted = pyqtSignal(Activity)
+    activityStopped = pyqtSignal(Activity)
+    completed = pyqtSignal()
+    countdown = pyqtSignal(int)
+
+    def __init__(self, model, *args, **kwargs):
+        super().__init__(model, *args, **kwargs)
+        self.model = model
+
+        self.timer_countdown = QTimer(self)
+        self.countdown_to = QTime()
+
+        self._connectSignals()
+
+    def _connectSignals(self):
+        self.timer_countdown.timeout.connect(self._countdown)
+
+    def _countdown(self):
+        self.countdown.emit(self._time_remaining())
+        if self._time_remaining() == 0:
+            self.activityExpired.emit(self.model.get_current_activity())
+
+    def _time_remaining(self):
+        if self.timer_countdown.isActive():
+            return QTime().currentTime().secsTo(self.countdown_to)
+        return 0
+
+    def start(self, preemptive=False):
+        if self.timer_countdown.isActive():
+            self.abort()
+
+        if not preemptive:
+            self.model.set_current_activity_start_time()
+
+        self.countdown_to = self.model.get_following_activity().start_time
+        self.timer_countdown.start(490)
+        self.countdown.emit(self._time_remaining())
+        self.activityStarted.emit(self.model.get_current_activity())
+
+    def start_from_selected(self, selected_indices, preemptive=False):
+        if selected_indices:
+            self.model.set_current_activity_index(selected_indices[0])
+            self.start(preemptive)
+
+    def end(self, preemptive=False):
+        if self.timer_countdown.isActive():
+            self.timer_countdown.stop()
+            self.activityStopped.emit(self.model.get_current_activity())
+
+            self.model.complete_activity(preemptive)
+
+            if self.model.is_completed():
+                self.model.complete()
+                self.completed.emit()
+                return
+
+            if preemptive:
+                self.start(preemptive)
+
+    def interrupt(self, interruption_name):
+        self.model.insert_interruption(interruption_name)
+        self.end()
+
+    def replace(self, replacement_name):
+        self.model.insert_replacement(replacement_name)
+        self.end()
+
+    def abort(self):
+        self.timer_countdown.stop()
+        self.activityStopped.emit(self.model.get_current_activity())
