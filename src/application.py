@@ -1,7 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QKeySequence
-from PyQt5.QtWidgets import QApplication, QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMessageBox
 
 from model.database import Database
 from model.plan import PlanTableModel, PlanHandler, Activity
@@ -36,8 +36,8 @@ class Application(QApplication):
         self.main_window.planStartRequested.connect(self.plan_handler.start)
         self.main_window.planStartFromSelectedRequested.connect(self.plan_handler.start_from_selected)
         self.main_window.planEndRequested.connect(self.plan_handler.end)
-        self.main_window.planReplaceRequested.connect(self.plan_replace_dialog)
-        self.main_window.planInterruptRequested.connect(self.plan_interrupt_dialog)
+        self.main_window.planReplaceRequested.connect(self.plan_handler.replace)
+        self.main_window.planInterruptRequested.connect(self.plan_handler.interrupt)
         self.main_window.planAbortRequested.connect(self.plan_handler.abort)
 
         self.main_window.planInsertActivity.connect(self.plan.insert_activity)
@@ -66,26 +66,6 @@ class Application(QApplication):
 
         if dialog == QMessageBox.Ok:
             self.exit_app_unexpected()
-
-    def plan_interrupt_dialog(self):
-        input_text, ok = QInputDialog().getText(
-                    self.main_window,
-                    "Interrupt activity...",
-                    "Set name for interruption:"
-                )
-
-        if ok and input_text:
-            self.plan_handler.interrupt(input_text)
-
-    def plan_replace_dialog(self):
-        input_text, ok = QInputDialog().getText(
-                    self.main_window,
-                    "Replace activity...",
-                    "Set name for replacement:"
-                )
-
-        if ok and input_text:
-            self.plan_handler.replace(input_text)
 
     # App exit
     ################################################################################

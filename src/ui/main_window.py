@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import (
     QApplication,
     QMainWindow,
     QFileDialog,
+    QInputDialog,
     QMessageBox,
     QMenu,
     QShortcut,
@@ -37,8 +38,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     planStartRequested = pyqtSignal(bool)
     planStartFromSelectedRequested = pyqtSignal(list, bool)
     planEndRequested = pyqtSignal(bool)
-    planInterruptRequested = pyqtSignal()
-    planReplaceRequested = pyqtSignal()
+    planInterruptRequested = pyqtSignal(str)
+    planReplaceRequested = pyqtSignal(str)
     planAbortRequested = pyqtSignal()
 
     planInsertActivity = pyqtSignal(int)
@@ -104,8 +105,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionEnd_Preemptively.triggered.connect(
             lambda: self.planEndRequested.emit(True)
         )
-        self.actionInterrupt.triggered.connect(self.planInterruptRequested)
-        self.actionReplace.triggered.connect(self.planReplaceRequested)
+        self.actionInterrupt.triggered.connect(self.plan_interrupt_dialog)
+        self.actionReplace.triggered.connect(self.plan_replace_dialog)
         self.actionAbort.triggered.connect(self.planAbortRequested)
         self.actionShow_Statistics.triggered.connect(self.show_stats_dialog)
 
@@ -145,7 +146,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_end.clicked.connect(
             lambda: self.planEndRequested.emit(False)
         )
-        self.pushButton_interrupt.clicked.connect(self.planInterruptRequested)
+        self.pushButton_interrupt.clicked.connect(self.plan_interrupt_dialog)
         self.pushButton_abort.clicked.connect(self.planAbortRequested)
 
         self.pushButton_new_task.clicked.connect(self.tasklistNewTask)
@@ -294,6 +295,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if path:
             indices = [] if export_all else self._get_selected_plan_indices()
             self.planExportRequested.emit(path, indices)
+
+    def plan_interrupt_dialog(self):
+        input_text, ok = QInputDialog().getText(
+                    self,
+                    "Interrupt activity...",
+                    "Set name for interruption:"
+                )
+
+        if ok and input_text:
+            self.planInterruptRequested.emit(input_text)
+
+    def plan_replace_dialog(self):
+        input_text, ok = QInputDialog().getText(
+                    self,
+                    "Replace activity...",
+                    "Set name for replacement:"
+                )
+
+        if ok and input_text:
+            self.planReplaceRequested.emit(input_text)
 
     # GUI stuff
     ################################################################################
