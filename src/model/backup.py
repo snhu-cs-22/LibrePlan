@@ -14,6 +14,10 @@ class Backup:
         )
         return f"{self.path}/backup-{datetime}.db"
 
+    def export(self, path):
+        db_file = QFile(self.database.path)
+        db_file.copy(path)
+
     def create(self):
         # Make copy of database
 

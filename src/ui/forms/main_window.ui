@@ -231,6 +231,7 @@
     <property name="title">
      <string>&amp;Tools</string>
     </property>
+    <addaction name="actionExport_Backup"/>
     <addaction name="actionRestore_Backup"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -479,7 +480,12 @@
   </action>
   <action name="actionRestore_Backup">
    <property name="text">
-    <string>Restore &amp;Backup...</string>
+    <string>&amp;Restore Backup...</string>
+   </property>
+  </action>
+  <action name="actionExport_Backup">
+   <property name="text">
+    <string>&amp;Export Backup...</string>
    </property>
   </action>
  </widget>

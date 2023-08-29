@@ -72,6 +72,7 @@ class Application(QApplication):
         self.main_window.tasklistNewTask.connect(self.tasklist.add_task)
         self.main_window.tasklistDeleteTasks.connect(self.tasklist.delete_tasks)
 
+        self.main_window.backupExportRequested.connect(self.backup.export)
         self.main_window.backupRestoreRequested.connect(self.restore_backup)
         self.main_window.appExitRequested.connect(self.exit_app)
 

@@ -48,6 +48,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     tasklistNewTask = pyqtSignal()
     tasklistDeleteTasks = pyqtSignal(list)
 
+    backupExportRequested = pyqtSignal(str)
     backupRestoreRequested = pyqtSignal(str)
     appExitRequested = pyqtSignal()
 
@@ -72,6 +73,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def _connectSignals(self):
         # Menu Actions
         self.actionAbout.triggered.connect(self.show_about_dialog)
+        self.actionExport_Backup.triggered.connect(self.export_backup_dialog)
         self.actionRestore_Backup.triggered.connect(self.restore_backup_dialog)
         self.actionExit.triggered.connect(self.appExitRequested)
         self.actionNew_Plan.triggered.connect(self.new_plan_dialog)
@@ -312,6 +314,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         if ok and input_text:
             self.planReplaceRequested.emit(input_text)
+
+    def export_backup_dialog(self):
+        path = QFileDialog.getSaveFileName(None, "Create Backup")[0]
+
+        if path:
+            self.backupExportRequested.emit(path)
 
     def restore_backup_dialog(self):
         path = QFileDialog.getOpenFileName(
