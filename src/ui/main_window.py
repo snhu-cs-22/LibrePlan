@@ -179,6 +179,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             lambda: self.show_selection_count(self.table_plan.selectionModel())
         )
 
+        self.table_tasklist.selectionModel().selectionChanged.connect(
+            lambda: self._toggle_menu_enabled_on_selection(
+                self.table_tasklist.selectionModel(),
+                self.menuTask
+            )
+        )
+        self.table_plan.selectionModel().selectionChanged.connect(
+            lambda: self._toggle_menu_enabled_on_selection(
+                self.table_plan.selectionModel(),
+                self.menuActivity
+            )
+        )
+
         self.table_plan.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table_plan.customContextMenuRequested.connect(
             lambda pos: self._show_context_menu(
@@ -372,6 +385,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             table_view.showColumn(column)
         else:
             table_view.hideColumn(column)
+
+    def _toggle_menu_enabled_on_selection(self, selection_model, menu):
+        is_selected = len(selection_model.selectedRows()) > 0
+        menu.setEnabled(is_selected)
 
     # Qt API Implementation
     ################################################################################

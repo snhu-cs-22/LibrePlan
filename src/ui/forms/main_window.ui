@@ -248,6 +248,9 @@
      <string>T&amp;asklist</string>
     </property>
     <widget class="QMenu" name="menuTask">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="title">
       <string>&amp;Task</string>
      </property>
@@ -270,6 +273,9 @@
      <string>&amp;Plan</string>
     </property>
     <widget class="QMenu" name="menuActivity">
+     <property name="enabled">
+      <bool>false</bool>
+     </property>
      <property name="title">
       <string>&amp;Activity</string>
      </property>
