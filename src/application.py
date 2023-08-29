@@ -34,7 +34,7 @@ class Application(QApplication):
         self.main_window.tasklistExportRequested.connect(self.tasklist.export_tasks)
 
         self.main_window.planStartRequested.connect(self.plan_handler.start)
-        self.main_window.planStartFromSelectedRequested.connect(self.plan_handler.start_from_selected)
+        self.main_window.planStartFromSelectedRequested.connect(self.plan_handler.start_from_index)
         self.main_window.planEndRequested.connect(self.plan_handler.end)
         self.main_window.planReplaceRequested.connect(self.plan_handler.replace)
         self.main_window.planInterruptRequested.connect(self.plan_handler.interrupt)

@@ -528,10 +528,9 @@ class PlanHandler(QObject):
         self.countdown.emit(self._time_remaining())
         self.activityStarted.emit(self.model.get_current_activity())
 
-    def start_from_selected(self, selected_indices, preemptive=False):
-        if selected_indices:
-            self.model.set_current_activity_index(selected_indices[0])
-            self.start(preemptive)
+    def start_from_index(self, index, preemptive=False):
+        self.model.set_current_activity_index(index)
+        self.start(preemptive)
 
     def end(self, preemptive=False):
         if self.timer_countdown.isActive():

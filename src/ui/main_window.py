@@ -36,7 +36,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     tasklistExportRequested = pyqtSignal(str, list)
 
     planStartRequested = pyqtSignal(bool)
-    planStartFromSelectedRequested = pyqtSignal(list, bool)
+    planStartFromSelectedRequested = pyqtSignal(int, bool)
     planEndRequested = pyqtSignal(bool)
     planInterruptRequested = pyqtSignal(str)
     planReplaceRequested = pyqtSignal(str)
@@ -85,19 +85,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             lambda: self.planStartRequested.emit(False)
         )
         self.actionStart_Plan_from_Here_Now.triggered.connect(
-            lambda: self.planStartFromSelectedRequested.emit(
-                self._get_selected_plan_indices(),
-                False
-            )
+            lambda: self._emit_plan_start_from_selected_signal(False)
         )
         self.actionStart_Plan_Preemptively.triggered.connect(
             lambda: self.planStartRequested.emit(True)
         )
         self.actionStart_Plan_from_Here_Preemptively.triggered.connect(
-            lambda: self.planStartFromSelectedRequested.emit(
-                self._get_selected_plan_indices(),
-                True
-            )
+            lambda: self._emit_plan_start_from_selected_signal(True)
         )
         self.actionEnd.triggered.connect(
             lambda: self.planEndRequested.emit(False)
@@ -382,6 +376,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _get_selected_plan_indices(self):
         return sorted([index.row() for index in self.table_plan.selectionModel().selectedRows()])
+
+    def _emit_plan_start_from_selected_signal(self, preemptive=False):
+        self.planStartFromSelectedRequested.emit(
+            self._get_first_selected_plan_index(),
+            preemptive
+        )
 
     def _get_plan_insertion_index(self, append):
         index = self._get_first_selected_plan_index()
