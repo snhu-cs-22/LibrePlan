@@ -332,7 +332,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             dialog = QMessageBox.warning(
                 self,
                 "Restore from Backup?",
-                "Do you want to restore from backup and exit? A backup of the current database will be made.",
+                "Do you want to restore from backup and restart? A backup of the current database will be made.",
                 QMessageBox.Ok | QMessageBox.Cancel
             )
 

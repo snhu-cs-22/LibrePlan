@@ -17,6 +17,8 @@ class Application(QApplication):
     PATH_DB = PATH_APPDATA + "/collection.db"
     PATH_BACKUPS = PATH_APPDATA + "/backups"
 
+    EXIT_CODE_RESTART = 6
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -86,7 +88,7 @@ class Application(QApplication):
 
     def db_open_failed_dialog(self):
         dialog = QMessageBox.critical(
-            self.main_window,
+            None,
             "Cannot open database",
             "Failed to establish a connection to the database.",
             QMessageBox.Ok
@@ -107,4 +109,4 @@ class Application(QApplication):
 
     def restore_backup(self, path):
         self.backup.restore(path)
-        super().exit(6)
+        super().exit(self.EXIT_CODE_RESTART)
