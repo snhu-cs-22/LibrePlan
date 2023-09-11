@@ -26,6 +26,7 @@ from model.plan import PlanTableModel, Activity
 from model.tasklist import TasklistTableModel, TasklistProxyModel, Task
 from ui.forms.main_window import Ui_MainWindow
 from ui.importing import ImportDialog, ReplaceOption
+from ui.settings import SettingsDialog
 from ui.stats import StatsDialog
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -75,6 +76,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionAbout.triggered.connect(self.show_about_dialog)
         self.actionExport_Backup.triggered.connect(self.export_backup_dialog)
         self.actionRestore_Backup.triggered.connect(self.restore_backup_dialog)
+        self.actionSettings.triggered.connect(self.show_settings_dialog)
         self.actionExit.triggered.connect(self.appExitRequested)
         self.actionNew_Plan.triggered.connect(self.new_plan_dialog)
         self.actionImport_Tasks.triggered.connect(self.import_tasks_dialog)
@@ -249,6 +251,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             "</center>"
         )
         QMessageBox.about(self, "About LibrePlan", text)
+
+    def show_settings_dialog(self):
+        self.settings_dialog = SettingsDialog(self.config)
+        self.settings_dialog.show()
 
     def show_stats_dialog(self):
         self.stats_dialog = StatsDialog(self.application)
