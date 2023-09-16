@@ -160,7 +160,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Other widgets
         self.tasklist_filter.returnPressed.connect(self.filter_tasklist)
 
-        self.tray_icon.activated.connect(self.show)
+        self.tray_icon.activated.connect(self.tray_icon_activated)
         self.tray_icon.messageClicked.connect(self.show)
 
         self._tasklist_proxy.sourceModel().layoutChanged.connect(self.update_title)
@@ -360,6 +360,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tray_icon_menu = QMenu(self)
         self.tray_icon_menu.addAction(self.actionExit)
         self.tray_icon.setContextMenu(self.tray_icon_menu)
+
+    def tray_icon_activated(self, reason):
+        if reason != QSystemTrayIcon.Context:
+            self.show()
 
     def activity_expired(self, current_activity):
         self.tabWidget.setCurrentIndex(0)
