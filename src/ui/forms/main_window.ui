@@ -105,6 +105,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButton_end">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>&amp;Finish</string>
             </property>
@@ -112,6 +115,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButton_interrupt">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>&amp;Interrupt</string>
             </property>
@@ -119,6 +125,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButton_abort">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>A&amp;bort</string>
             </property>
@@ -392,6 +401,9 @@
    </property>
   </action>
   <action name="actionEnd">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Finish Now</string>
    </property>
@@ -400,6 +412,9 @@
    </property>
   </action>
   <action name="actionInterrupt">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Interrupt</string>
    </property>
@@ -408,6 +423,9 @@
    </property>
   </action>
   <action name="actionAbort">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>A&amp;bort</string>
    </property>
@@ -465,6 +483,9 @@
    </property>
   </action>
   <action name="actionEnd_Preemptively">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Finish Preemptively and Start Ne&amp;xt</string>
    </property>
@@ -473,6 +494,9 @@
    </property>
   </action>
   <action name="actionReplace">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Finish Now and &amp;Replace...</string>
    </property>

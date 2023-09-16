@@ -365,6 +365,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if reason != QSystemTrayIcon.Context:
             self.show()
 
+    def activity_started(self):
+        self._toggle_plan_running(True)
+
+    def activity_stopped(self):
+        self._toggle_plan_running(False)
+        self.update_title()
+
+    def _toggle_plan_running(self, enabled):
+        # Start Buttons/Actions
+        self.pushButton_start_now.setDisabled(enabled)
+
+        self.actionStart_now.setDisabled(enabled)
+        self.actionStart_Plan_from_Here_Now.setDisabled(enabled)
+        self.actionStart_Plan_Preemptively.setDisabled(enabled)
+        self.actionStart_Plan_from_Here_Preemptively.setDisabled(enabled)
+
+        # Other Buttons/Actions
+        self.pushButton_end.setEnabled(enabled)
+        self.pushButton_interrupt.setEnabled(enabled)
+        self.pushButton_abort.setEnabled(enabled)
+
+        self.actionEnd.setEnabled(enabled)
+        self.actionEnd_Preemptively.setEnabled(enabled)
+        self.actionInterrupt.setEnabled(enabled)
+        self.actionAbort.setEnabled(enabled)
+        self.actionReplace.setEnabled(enabled)
+
     def activity_expired(self, current_activity):
         self.tabWidget.setCurrentIndex(0)
         self.tray_icon.showMessage(
