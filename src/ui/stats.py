@@ -26,6 +26,7 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         self._plot_days_ago(0)
 
         self._connectSignals()
+        self.show()
 
     # Qt Slots/Signals
     ################################################################################

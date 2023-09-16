@@ -17,6 +17,7 @@ class SettingsDialog(QDialog, Ui_SettingsDialog):
         )
 
         self._connectSignals()
+        self.show()
 
     def _connectSignals(self):
         self.apply_button.clicked.connect(self.apply)

@@ -253,12 +253,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         QMessageBox.about(self, "About LibrePlan", text)
 
     def show_settings_dialog(self):
-        self.settings_dialog = SettingsDialog(self.config)
-        self.settings_dialog.show()
+        SettingsDialog(self.config)
 
     def show_stats_dialog(self):
-        self.stats_dialog = StatsDialog(self.application)
-        self.stats_dialog.show()
+        StatsDialog(self.application)
 
     def import_tasks_dialog(self):
         path = QFileDialog.getOpenFileName(self, "Import Tasks")[0]
