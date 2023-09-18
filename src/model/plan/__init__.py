@@ -209,6 +209,7 @@ class PlanTableModel(QAbstractTableModel):
 
     def clear(self):
         self.layoutAboutToBeChanged.emit()
+        self.set_current_activity_index(0)
         self._activities = []
         self.database.execute_query(self.query_clear)
         self.layoutChanged.emit()
