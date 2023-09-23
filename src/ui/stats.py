@@ -6,15 +6,8 @@ from model.stats import StatsModel
 from ui.forms.stats import Ui_StatsDialog
 
 class StatsDialog(QDialog, Ui_StatsDialog):
-    def __init__(self, application, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        window_flags = (
-            Qt.WindowTitleHint | Qt.WindowSystemMenuHint |
-            # Explicitly ask for minimize, maximize, and close buttons
-            # in case the OS doesn't get the hint
-            Qt.WindowMinMaxButtonsHint | Qt.WindowCloseButtonHint
-        )
-        self.setWindowFlags(window_flags)
+    def __init__(self, parent, application, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
 
         self.application = application
         self.model = StatsModel(self.application.database)
@@ -26,7 +19,8 @@ class StatsDialog(QDialog, Ui_StatsDialog):
         self._plot_days_ago(0)
 
         self._connectSignals()
-        self.show()
+        self.setModal(True)
+        self.open()
 
     # Qt Slots/Signals
     ################################################################################

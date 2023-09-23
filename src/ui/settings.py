@@ -5,8 +5,8 @@ from model.config import Config
 from ui.forms.settings import Ui_SettingsDialog
 
 class SettingsDialog(QDialog, Ui_SettingsDialog):
-    def __init__(self, config, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, parent, config, *args, **kwargs):
+        super().__init__(parent, *args, **kwargs)
         self.setupUi(self)
         self.apply_button = self.buttonBox.button(QDialogButtonBox.Apply)
         self.apply_button.setEnabled(False)
@@ -17,7 +17,8 @@ class SettingsDialog(QDialog, Ui_SettingsDialog):
         )
 
         self._connectSignals()
-        self.show()
+        self.setModal(True)
+        self.open()
 
     def _connectSignals(self):
         self.apply_button.clicked.connect(self.apply)
