@@ -1,6 +1,7 @@
 import json
 from math import floor
 
+from PyQt5.QtGui import QFont
 from PyQt5.QtCore import (
     Qt,
     QAbstractTableModel,
@@ -153,6 +154,7 @@ class PlanTableModel(QAbstractTableModel):
         self.config = config
         self.database = database
         self._current_activity_index = self.config.get_setting("current_activity_index", 0)
+        self._is_running = False
 
         self.query_count = self.database.get_prepared_query(queries.count)
         self.query_insert = self.database.get_prepared_query(queries.insert_activity)
@@ -392,6 +394,11 @@ class PlanTableModel(QAbstractTableModel):
         final_activity_index = self.rowCount() - 1
         return self._current_activity_index >= final_activity_index
 
+    def set_running(self, running):
+        self.layoutAboutToBeChanged.emit()
+        self._is_running = running
+        self.layoutChanged.emit()
+
     def calculate(self):
         if self._activities:
             self._calculate_actual_lengths()
@@ -532,6 +539,17 @@ class PlanTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole:
             activity = self._activities[index.row()]
             return activity.get_attr_by_index(index.column())
+
+        if role == Qt.FontRole:
+            font = QFont()
+            if (
+                index.row() == self._current_activity_index
+                and index.column() == Activity.COLUMN_INDICES["name"]
+            ):
+                font.setBold(True)
+                if self._is_running:
+                    font.setItalic(True)
+                return font
         return None
 
     def headerData(self, index, orientation=Qt.Horizontal, role=Qt.DisplayRole):
@@ -585,6 +603,8 @@ class PlanHandler(QObject):
         self._connectSignals()
 
     def _connectSignals(self):
+        self.activityStarted.connect(lambda: self.model.set_running(True))
+        self.activityStopped.connect(lambda: self.model.set_running(False))
         self.timer_countdown.timeout.connect(self._countdown)
 
     def _countdown(self):
