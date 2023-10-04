@@ -96,9 +96,9 @@ class Task:
         self.value = value
         self.cost = cost
 
-        self.deadline_type = deadline_type
         self.DATE_CREATED = date_created
-        self.deadline = deadline
+        self._deadline = deadline
+        self._deadline_type = deadline_type
 
     def _select_deadline_function(self, today):
         functions = {
@@ -139,6 +139,26 @@ class Task:
             to_deadline = date_created.daysTo(deadline)
             return Task._deadline_decline(today.addDays(-to_deadline), deadline, date_created)
         return 1.0
+
+    @property
+    def deadline(self):
+        return self._deadline
+
+    @deadline.setter
+    def deadline(self, value):
+        self._deadline = value
+        if value.isValid() and self._deadline_type == DeadlineType.NONE:
+            self._deadline_type = DeadlineType.STANDARD
+
+    @property
+    def deadline_type(self):
+        return self._deadline_type
+
+    @deadline_type.setter
+    def deadline_type(self, value):
+        self._deadline_type = value
+        if value == DeadlineType.NONE:
+            self._deadline = QDate()
 
     def get_priority(self, today=QDate.currentDate()):
         if self.cost == 0:
@@ -335,6 +355,10 @@ class TasklistTableModel(QAbstractTableModel):
 
     def flags(self, index):
         if index.column() in Task.EDITABLE_COLUMNS:
+            # Disable the user selection of deadline type before deadline is set
+            if (not self._tasks[index.row()].deadline.isValid()
+                and index.column() == Task.COLUMN_INDICES["deadline_type"]):
+                return super().flags(index)
             return super().flags(index) | Qt.ItemIsEditable
         return super().flags(index)
 
