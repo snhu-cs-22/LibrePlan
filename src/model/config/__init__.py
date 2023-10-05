@@ -28,24 +28,28 @@ class Config:
         self.query_set.bindValue(":value", value)
         self.database.execute_query(self.query_set)
 
-    def get_state(self, widget):
+    def restore_state(self, widget):
         key = f"ui.{widget.objectName()}/state"
-        return self.get_setting(
-            key,
-            widget.saveState()
-        )
+        value = self.get_setting(
+                    key,
+                    widget.saveState()
+                )
+        if value != widget.saveState():
+            widget.restoreState(value)
 
-    def set_state(self, widget):
+    def save_state(self, widget):
         key = f"ui.{widget.objectName()}/state"
         self.set_setting(key, widget.saveState())
 
-    def get_geometry(self, widget):
+    def restore_geometry(self, widget):
         key = f"ui.{widget.objectName()}/geometry"
-        return self.get_setting(
-            key,
-            widget.saveGeometry()
-        )
+        value = self.get_setting(
+                    key,
+                    widget.saveGeometry()
+                )
+        if value != widget.saveGeometry():
+            widget.restoreGeometry(value)
 
-    def set_geometry(self, widget):
+    def save_geometry(self, widget):
         key = f"ui.{widget.objectName()}/geometry"
         self.set_setting(key, widget.saveGeometry())

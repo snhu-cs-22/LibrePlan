@@ -64,8 +64,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tray_icon = QSystemTrayIcon(self)
 
         self.setupUi(self)
-        self.restoreState(self.config.get_state(self))
-        self.restoreGeometry(self.config.get_geometry(self))
+        self.config.restore_state(self)
+        self.config.restore_geometry(self)
         self._setupTables(application.plan, application.tasklist)
         self._setupSystemTrayIcon()
         self._connectSignals()
@@ -580,8 +580,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def hide(self):
         super().hide()
-        self.config.set_state(self)
-        self.config.set_geometry(self)
+        self.config.save_state(self)
+        self.config.save_geometry(self)
         self.config.set_setting(
             "ui.plan/header_state",
             self.table_plan.horizontalHeader().saveState()
