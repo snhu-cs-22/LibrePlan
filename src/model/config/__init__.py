@@ -8,17 +8,23 @@ class Config:
     def __init__(self, database):
         self.database = database
         self.query_get = self.database.get_prepared_query(queries.get_setting)
+        self.query_has = self.database.get_prepared_query(queries.has_setting)
         self.query_set = self.database.get_prepared_query(queries.insert_setting)
 
+    def has_setting(self, key):
+        self.query_has.bindValue(":key", key)
+        self.database.execute_query(self.query_has)
+        self.query_has.first()
+        return bool(self.query_has.value("count"))
+
     def get_setting(self, key, default_value):
+        if not self.has_setting(key):
+            self.set_setting(key, default_value)
+
         self.query_get.bindValue(":key", key)
         self.database.execute_query(self.query_get)
         self.query_get.first()
         value = self.query_get.value("value")
-
-        if not value:
-            self.set_setting(key, default_value)
-            return default_value
 
         # Cast value to type of default value
         return type(default_value)(value)
@@ -30,12 +36,13 @@ class Config:
 
     def restore_state(self, widget):
         key = f"ui.{widget.objectName()}/state"
-        value = self.get_setting(
+        if self.has_setting(key):
+            widget.restoreState(
+                self.get_setting(
                     key,
                     widget.saveState()
                 )
-        if value != widget.saveState():
-            widget.restoreState(value)
+            )
 
     def save_state(self, widget):
         key = f"ui.{widget.objectName()}/state"
@@ -43,12 +50,13 @@ class Config:
 
     def restore_geometry(self, widget):
         key = f"ui.{widget.objectName()}/geometry"
-        value = self.get_setting(
+        if self.has_setting(key):
+            widget.restoreGeometry(
+                self.get_setting(
                     key,
                     widget.saveGeometry()
                 )
-        if value != widget.saveGeometry():
-            widget.restoreGeometry(value)
+            )
 
     def save_geometry(self, widget):
         key = f"ui.{widget.objectName()}/geometry"
