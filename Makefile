@@ -2,6 +2,7 @@ BUILD_DIR = ./build
 DIST_DIR = ./dist
 SOURCE_DIR = ./src
 RESOURCE_DIR = ./resources
+TEST_DIR = ./tests
 SQL_DIRS = $(sort $(dir $(SQL_FILES)))
 UI_FORMS_DIR = $(SOURCE_DIR)/ui/forms
 
@@ -28,6 +29,7 @@ endif
 PYTHON = $(PYENV_BIN)/python
 PIP = $(PYTHON) -m pip
 PYINSTALLER = $(PYENV_BIN)/pyinstaller
+PYTEST = $(PYENV_BIN)/pytest
 PYUIC = $(PYENV_BIN)/pyuic5
 
 SQL_FILES := $(shell find $(SOURCE_DIR) -name "*.sql")
@@ -45,6 +47,8 @@ COMPILED_FILES = $(UI_COMPILED) $(SQL_COMPILED)
 all: exe
 
 setup: $(PYENV) $(COMPILED_FILES)
+
+setup-tests: setup $(PYTEST)
 
 $(UI_FORMS_DIR)/%.py: $(UI_FORMS_DIR)/%.ui
 	$(PYUIC) $< -o $@;
@@ -65,6 +69,9 @@ $(PYENV): requirements.txt
 	$(PIP) install -U pip
 	$(PIP) install -r requirements.txt
 
+$(PYTEST): $(PYENV) requirements_dev.txt
+	$(PIP) install -r requirements_dev.txt
+
 exe: setup
 	$(PYINSTALLER) $(PYINSTALLER_FLAGS) $(SOURCE_DIR)/main.py
 
@@ -73,6 +80,9 @@ installer: exe
 
 run: setup
 	$(PYTHON) $(SOURCE_DIR)/main.py
+
+test: setup-tests
+	$(PYTEST) $(TEST_DIR)
 
 clean:
 	-rm -rf $(BUILD_DIR) $(DIST_DIR) $(COMPILED_FILES) LibrePlan.spec
