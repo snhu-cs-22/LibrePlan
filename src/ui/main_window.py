@@ -46,6 +46,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     planInsertActivity = pyqtSignal(int)
     planDeleteActivities = pyqtSignal(list)
 
+    planCutActivities = pyqtSignal(list)
+    planCopyActivities = pyqtSignal(list)
+    planPasteActivities = pyqtSignal(int)
+
     tasklistNewTask = pyqtSignal()
     tasklistDeleteTasks = pyqtSignal(list)
 
@@ -123,6 +127,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
         self.actionExport_Selected_Activities.triggered.connect(
             lambda: self.export_activities_dialog(False)
+        )
+
+        self.actionPlan_Cut_Selected_Activities.triggered.connect(
+            lambda: self.planCutActivities.emit(
+                self._get_selected_plan_indices()
+            )
+        )
+        self.actionPlan_Copy_Selected_Activities.triggered.connect(
+            lambda: self.planCopyActivities.emit(
+                self._get_selected_plan_indices()
+            )
+        )
+        self.actionPlan_Paste_Before.triggered.connect(
+            lambda: self.planPasteActivities.emit(
+                self._get_plan_insertion_index(False)
+            )
+        )
+        self.actionPlan_Paste_After.triggered.connect(
+            lambda: self.planPasteActivities.emit(
+                self._get_plan_insertion_index(True)
+            )
         )
         self.actionDelete_Selected_Activities.triggered.connect(
             lambda: self.planDeleteActivities.emit(
@@ -221,6 +246,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def _connectSlots(self):
         self.appExitRequested.connect(self.hide)
+        self.application.clipboard().dataChanged.connect(
+            self._enable_paste_actions
+        )
 
     def _setupKeys(self):
         globalShortcuts = [
@@ -389,6 +417,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionInterrupt.setEnabled(enabled)
         self.actionAbort.setEnabled(enabled)
         self.actionReplace.setEnabled(enabled)
+
+    def _enable_paste_actions(self):
+        self.actionPlan_Paste_Before.setEnabled(True)
+        self.actionPlan_Paste_After.setEnabled(True)
 
     def activity_expired(self, current_activity):
         self.tabWidget.setCurrentIndex(0)

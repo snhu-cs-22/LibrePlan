@@ -71,6 +71,10 @@ class Application(QApplication):
         self.main_window.planInsertActivity.connect(self.plan.insert_activity)
         self.main_window.planDeleteActivities.connect(self.plan.delete_activities)
 
+        self.main_window.planCutActivities.connect(self.plan.cut_activities)
+        self.main_window.planCopyActivities.connect(self.plan.copy_activities)
+        self.main_window.planPasteActivities.connect(self.plan.paste_activities)
+
         self.main_window.tasklistNewTask.connect(self.tasklist.add_task)
         self.main_window.tasklistDeleteTasks.connect(self.tasklist.delete_tasks)
 

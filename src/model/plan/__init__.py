@@ -9,9 +9,16 @@ from PyQt5.QtCore import (
     QTimer,
     QTime,
     QDateTime,
+
+    QByteArray,
+    QDataStream,
+    QIODevice,
+    QMimeData,
+
     pyqtSignal,
     pyqtSlot,
 )
+from PyQt5.QtWidgets import QApplication
 
 from model.storage import Database
 from ui.importing import ReplaceOption
@@ -75,6 +82,11 @@ class Activity:
 
     EDITABLE_COLUMNS = [i for i, col in enumerate(COLUMNS) if col["user_editable"]]
 
+    ENCODABLE_COLUMNS = EDITABLE_COLUMNS
+
+    MIME_TYPE = "application/x-activity"
+
+
     def __init__(self,
         id=None,
         name="Activity",
@@ -107,6 +119,27 @@ class Activity:
 
     def set_attr_by_index(self, index, value):
         setattr(self, Activity.COLUMNS[index]["attr"], value)
+
+    def encoded(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "length": self.length,
+            "start_time": self.start_time.toString(Database.TIME_FORMAT),
+            "is_fixed": self.is_fixed,
+            "is_rigid": self.is_rigid,
+        }
+
+    @staticmethod
+    def decode(data):
+        return Activity(
+            id = data["id"],
+            name = data["name"],
+            length = data["length"],
+            start_time = QTime.fromString(data["start_time"]),
+            is_fixed = data["is_fixed"],
+            is_rigid = data["is_rigid"],
+        )
 
 class PlanTableModel(QAbstractTableModel):
     def __init__(self, parent, database, config, *args):
@@ -267,6 +300,35 @@ class PlanTableModel(QAbstractTableModel):
 
             activities_json = json.dumps(activities_properties)
             f.write(activities_json)
+
+    # Clipboard operations
+    ################################################################################
+
+    def cut_activities(self, indices):
+        self.copy_activities(indices)
+        self.delete_activities(indices)
+
+    def copy_activities(self, indices):
+        mime_data = QMimeData()
+        encoded_data = QByteArray()
+        stream = QDataStream(encoded_data, QIODevice.WriteOnly)
+
+        encoded_activities = [self._activities[i].encoded() for i in indices]
+        stream.writeBytes(str.encode(json.dumps(encoded_activities)))
+        mime_data.setData(Activity.MIME_TYPE, encoded_data)
+
+        QApplication.clipboard().setMimeData(mime_data)
+
+    def paste_activities(self, index):
+        encoded_data = QApplication.clipboard().mimeData().data(Activity.MIME_TYPE)
+        stream = QDataStream(encoded_data, QIODevice.ReadOnly)
+
+        if not stream.atEnd(): # Stream has data
+            json_string = stream.readBytes().decode()
+            activity_jsons = json.loads(json_string)
+
+            activities = [Activity.decode(a) for a in activity_jsons]
+            self.insert_activities(index, activities)
 
     # Functionality Helper Methods
     ################################################################################

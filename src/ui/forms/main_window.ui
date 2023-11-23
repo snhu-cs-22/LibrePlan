@@ -299,6 +299,10 @@
      <addaction name="actionStart_Plan_from_Here_Now"/>
      <addaction name="actionStart_Plan_from_Here_Preemptively"/>
      <addaction name="separator"/>
+     <addaction name="actionPlan_Cut_Selected_Activities"/>
+     <addaction name="actionPlan_Copy_Selected_Activities"/>
+     <addaction name="actionPlan_Paste_Before"/>
+     <addaction name="actionPlan_Paste_After"/>
      <addaction name="actionDelete_Selected_Activities"/>
     </widget>
     <widget class="QMenu" name="menuPlan_Show_Hide_Columns">
@@ -463,7 +467,7 @@
   </action>
   <action name="actionStart_Plan_from_Here_Preemptively">
    <property name="text">
-    <string>Start Plan from Here &amp;Preemptively</string>
+    <string>Start Plan from Here P&amp;reemptively</string>
    </property>
   </action>
   <action name="actionPlan_Archive">
@@ -517,6 +521,44 @@
   <action name="actionSettings">
    <property name="text">
     <string>&amp;Settings</string>
+   </property>
+  </action>
+  <action name="actionPlan_Copy_Selected_Activities">
+   <property name="text">
+    <string>&amp;Copy Selected</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+C</string>
+   </property>
+  </action>
+  <action name="actionPlan_Cut_Selected_Activities">
+   <property name="text">
+    <string notr="true">Cu&amp;t Selected</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+X</string>
+   </property>
+  </action>
+  <action name="actionPlan_Paste_Before">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Paste &amp;Before</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+Shift+V</string>
+   </property>
+  </action>
+  <action name="actionPlan_Paste_After">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Paste A&amp;fter</string>
+   </property>
+   <property name="shortcut">
+    <string notr="true">Ctrl+V</string>
    </property>
   </action>
  </widget>
