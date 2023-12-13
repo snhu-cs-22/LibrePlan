@@ -68,6 +68,9 @@ $(PYENV): requirements.txt
 exe: setup
 	$(PYINSTALLER) $(PYINSTALLER_FLAGS) $(SOURCE_DIR)/main.py
 
+installer: exe
+	makensis installer.nsi
+
 run: setup
 	$(PYTHON) $(SOURCE_DIR)/main.py
 
