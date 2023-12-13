@@ -1,5 +1,5 @@
 PyQt5
 PyQtChart
 pyqt5-tools
-pyinstaller
-Pillow
+pyinstaller==6.*
+Pillow==10.*

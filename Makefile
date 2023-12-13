@@ -16,7 +16,8 @@ PYINSTALLER_FLAGS = -y \
 	--paths $(SOURCE_DIR) \
 	--add-data="$(RESOURCE_DIR):resources" \
 	--workpath $(BUILD_DIR) \
-	--distpath $(DIST_DIR)
+	--distpath $(DIST_DIR) \
+	--contents-directory .
 
 ifeq ($(OS), Windows_NT)
 SYS_PYTHON = python
