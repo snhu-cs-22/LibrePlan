@@ -87,6 +87,8 @@ class Application(QApplication):
         self.plan_handler.activityStarted.connect(self.main_window.activity_started)
         self.plan_handler.activityExpired.connect(self.main_window.activity_expired)
         self.plan_handler.activityStopped.connect(self.main_window.activity_stopped)
+        if self.config.get_setting("user.backup/on_plan_complete", False):
+            self.plan_handler.completed.connect(self.backup.create)
 
     # Dialogs
     ################################################################################
@@ -106,7 +108,8 @@ class Application(QApplication):
     ################################################################################
 
     def exit_app(self):
-        self.backup.create()
+        if self.config.get_setting("user.backup/on_exit", True):
+            self.backup.create()
         super().exit(0)
 
     def exit_app_unexpected(self):
