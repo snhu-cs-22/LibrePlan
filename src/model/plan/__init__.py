@@ -553,6 +553,7 @@ class PlanTableModel(QAbstractTableModel):
         return super().flags(index)
 
 class PlanHandler(QObject):
+    activityBegan = pyqtSignal(Activity)
     activityExpired = pyqtSignal(Activity)
     activityStarted = pyqtSignal(Activity)
     activityStopped = pyqtSignal(Activity)
@@ -564,6 +565,7 @@ class PlanHandler(QObject):
         self.model = model
 
         self.timer_countdown = QTimer(self)
+        self.countdown_from = QTime()
         self.countdown_to = QTime()
 
         self._connectSignals()
@@ -572,11 +574,21 @@ class PlanHandler(QObject):
         self.timer_countdown.timeout.connect(self._countdown)
 
     def _countdown(self):
-        self.countdown.emit(self._time_remaining())
-        if self._time_remaining() == 0:
-            self.activityExpired.emit(self.model.get_current_activity())
+        self.countdown.emit(self._time_until_end())
 
-    def _time_remaining(self):
+        # Knowing when an activity ends is more important than knowing when it
+        # starts. Therfore, we check first if the activity has ended.
+        if self._time_until_end() == 0:
+            self.activityExpired.emit(self.model.get_current_activity())
+        elif self._time_until_start() == 0:
+            self.activityBegan.emit(self.model.get_current_activity())
+
+    def _time_until_start(self):
+        if self.timer_countdown.isActive():
+            return QTime().currentTime().secsTo(self.countdown_from)
+        return 0
+
+    def _time_until_end(self):
         if self.timer_countdown.isActive():
             return QTime().currentTime().secsTo(self.countdown_to)
         return 0
@@ -588,9 +600,10 @@ class PlanHandler(QObject):
         if not preemptive:
             self.model.set_current_activity_start_time()
 
+        self.countdown_from = self.model.get_current_activity().start_time
         self.countdown_to = self.model.get_following_activity().start_time
         self.timer_countdown.start(490)
-        self.countdown.emit(self._time_remaining())
+        self.countdown.emit(self._time_until_end())
         self.activityStarted.emit(self.model.get_current_activity())
 
     def start_from_index(self, index, preemptive=False):

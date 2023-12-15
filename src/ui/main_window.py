@@ -422,6 +422,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.actionPlan_Paste_Before.setEnabled(True)
         self.actionPlan_Paste_After.setEnabled(True)
 
+    def activity_began(self, current_activity):
+        self.tray_icon.showMessage(
+            f"Activity \"{current_activity.name}\" has begun.",
+            "Activity was preemptively started.",
+        )
+
     def activity_expired(self, current_activity):
         self.tabWidget.setCurrentIndex(0)
         self.tray_icon.showMessage(
