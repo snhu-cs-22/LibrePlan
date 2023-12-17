@@ -23,10 +23,6 @@ class GenericDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         """Returns the proper editor widget based on item datatype"""
 
-        if isinstance(index.data(), bool):
-            checkbox = QCheckBox(parent)
-            return checkbox
-
         if isinstance(index.data(), int):
             spin_box = QSpinBox(parent)
             spin_box.setMaximum(999999)
@@ -47,22 +43,17 @@ class GenericDelegate(QStyledItemDelegate):
         return None
 
     def setEditorData(self, editor, index):
-        if isinstance(editor, QCheckBox):
-            editor.setChecked(index.data())
-
         if isinstance(editor, QSpinBox):
             editor.setValue(index.data())
 
-        if isinstance(editor, QLineEdit):
+        elif isinstance(editor, QLineEdit):
             editor.setText(index.data())
 
-        if isinstance(editor, QDateEdit):
+        elif isinstance(editor, QDateEdit):
             editor.setDate(index.data())
 
-        if isinstance(editor, QTimeEdit):
+        elif isinstance(editor, QTimeEdit):
             editor.setTime(index.data())
-
-        return None
 
 class BoolDelegate(QStyledItemDelegate):
 
