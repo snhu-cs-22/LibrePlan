@@ -56,6 +56,7 @@ class GenericDelegate(QStyledItemDelegate):
             editor.setTime(index.data())
 
 class BoolDelegate(QStyledItemDelegate):
+    """Clickable checkbox for boolean values."""
 
     def __init__(self, parent, *args):
         QStyledItemDelegate.__init__(self, parent, *args)
@@ -132,6 +133,7 @@ class DeadlineDelegate(QStyledItemDelegate):
             editor.setDate(index.data())
 
 class DeadlineTypeDelegate(QStyledItemDelegate):
+    """Delegate for showing all deadline types in a combo box."""
 
     def __init__(self, parent, *args):
         QStyledItemDelegate.__init__(self, parent, *args)
@@ -162,6 +164,9 @@ class DeadlineTypeDelegate(QStyledItemDelegate):
         return str(value)
 
 class PercentDelegate(QStyledItemDelegate):
+    """Delegate for displaying float values as a percentage (i.e. 0.5 ->
+    50%).
+    """
 
     def __init__(self, parent, *args):
         QStyledItemDelegate.__init__(self, parent, *args)
