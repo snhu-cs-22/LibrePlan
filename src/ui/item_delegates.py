@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import QDate, QTime, QPoint, QRect
+from PyQt5.QtCore import Qt, QDate, QTime, QPoint, QRect, QModelIndex
 from PyQt5.QtWidgets import (
     QApplication,
     QStyle,
@@ -112,6 +112,33 @@ class BoolDelegate(QStyledItemDelegate):
     def setModelData(self, editor, model, index):
         value = not index.data()
         model.setData(index, value)
+
+class DeadlineDelegate(QStyledItemDelegate):
+    """Delegate for selecting a deadline.
+
+    This prevents a user from setting a deadline that is earlier than
+    the date the task was created.
+    """
+
+    def __init__(self, parent, *args):
+        QStyledItemDelegate.__init__(self, parent, *args)
+        self._model = parent
+
+    def createEditor(self, parent, option, index):
+        if isinstance(index.data(), QDate):
+            date_edit = QDateEdit(parent)
+            date_edit.setCalendarPopup(True)
+            return date_edit
+        return None
+
+    def setEditorData(self, editor, index):
+        from model.tasklist import Task
+        if isinstance(editor, QDateEdit):
+            date_created = self._model.mapToSource(index).siblingAtColumn(
+                Task.COLUMN_INDICES["DATE_CREATED"]
+            ).data()
+            editor.setMinimumDate(date_created)
+            editor.setDate(index.data())
 
 class DeadlineTypeDelegate(QStyledItemDelegate):
 

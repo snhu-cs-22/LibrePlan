@@ -12,7 +12,12 @@ from PyQt5.QtCore import (
 
 from model.storage import Database
 from ui.importing import ReplaceOption
-from ui.item_delegates import GenericDelegate, DeadlineTypeDelegate, PercentDelegate
+from ui.item_delegates import (
+    GenericDelegate,
+    DeadlineDelegate,
+    DeadlineTypeDelegate,
+    PercentDelegate,
+)
 
 import model.tasklist.queries as queries
 
@@ -62,7 +67,7 @@ class Task:
             "attr": "deadline",
             "label": "Deadline",
             "user_editable": True,
-            "delegate": GenericDelegate,
+            "delegate": DeadlineDelegate,
         },
         {
             "attr": "get_halftime",

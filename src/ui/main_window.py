@@ -461,7 +461,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.table_tasklist.setModel(self._tasklist_proxy)
 
         for i, col in enumerate(Task.COLUMNS):
-            self.table_tasklist.setItemDelegateForColumn(i, col["delegate"](self))
+            self.table_tasklist.setItemDelegateForColumn(i, col["delegate"](self._tasklist_proxy))
 
         self.table_tasklist.horizontalHeader().setSectionsMovable(True)
         self.table_tasklist.horizontalHeader().restoreState(
