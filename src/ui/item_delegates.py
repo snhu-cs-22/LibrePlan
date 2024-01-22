@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import (
 
     QCheckBox,
     QLineEdit,
+    QCompleter,
     QComboBox,
     QSpinBox,
     QDateEdit,
@@ -54,6 +55,26 @@ class GenericDelegate(QStyledItemDelegate):
 
         elif isinstance(editor, QTimeEdit):
             editor.setTime(index.data())
+
+class ActivityNameDelegate(QStyledItemDelegate):
+    """QLineEdit widget with autocomplete of all names of all tasks and
+    activities, current and previous.
+    """
+
+    def __init__(self, parent, *args):
+        QStyledItemDelegate.__init__(self, parent, *args)
+
+    def createEditor(self, parent, option, index):
+        line_edit = QLineEdit(parent)
+        return line_edit
+
+    def setEditorData(self, editor, index):
+        editor.setText(index.data())
+
+        completer = QCompleter(index.model().get_all_names())
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchContains)
+        editor.setCompleter(completer)
 
 class BoolDelegate(QStyledItemDelegate):
     """Clickable checkbox for boolean values."""

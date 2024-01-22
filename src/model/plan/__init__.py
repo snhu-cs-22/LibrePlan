@@ -22,7 +22,12 @@ from PyQt5.QtWidgets import QApplication
 
 from model.storage import Database
 from ui.importing import ReplaceOption
-from ui.item_delegates import GenericDelegate, BoolDelegate, PercentDelegate
+from ui.item_delegates import (
+    GenericDelegate,
+    ActivityNameDelegate,
+    BoolDelegate,
+    PercentDelegate,
+)
 
 import model.plan.queries as queries
 
@@ -50,7 +55,7 @@ class Activity:
             "attr": "name",
             "label": "Name",
             "user_editable": True,
-            "delegate": GenericDelegate,
+            "delegate": ActivityNameDelegate,
         },
         {
             "attr": "length",
@@ -159,6 +164,7 @@ class PlanTableModel(QAbstractTableModel):
         self.query_clear = self.database.get_prepared_query(queries.delete_all_activities)
         self.query_archive_name = self.database.get_prepared_query(queries.insert_into_activities)
         self.query_insert_into_log = self.database.get_prepared_query(queries.insert_into_log)
+        self.query_all_names = self.database.get_prepared_query(queries.get_all_names)
 
         self._read_activities()
 
@@ -332,6 +338,13 @@ class PlanTableModel(QAbstractTableModel):
 
     # Functionality Helper Methods
     ################################################################################
+
+    def get_all_names(self):
+        names = []
+        self.database.execute_query(self.query_all_names)
+        while self.query_all_names.next():
+            names.append(self.query_all_names.value("name"))
+        return names
 
     def set_current_activity_index(self, index):
         # The final activity marks the end of the plan, so we stop one before the end
