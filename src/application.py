@@ -83,7 +83,8 @@ class Application(QApplication):
         self.main_window.appExitRequested.connect(self.exit_app)
 
         # Plan Handler
-        self.plan_handler.countdown.connect(self.main_window.update_title_countdown)
+        self.plan_handler.countdownToStart.connect(self.main_window.countdown_to_start)
+        self.plan_handler.countdownToEnd.connect(self.main_window.countdown_to_end)
         self.plan_handler.activityBegan.connect(self.main_window.activity_began)
         self.plan_handler.activityStarted.connect(self.main_window.activity_started)
         self.plan_handler.activityExpired.connect(self.main_window.activity_expired)

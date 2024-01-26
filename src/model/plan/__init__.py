@@ -571,7 +571,8 @@ class PlanHandler(QObject):
     activityStarted = pyqtSignal(Activity)
     activityStopped = pyqtSignal(Activity)
     completed = pyqtSignal()
-    countdown = pyqtSignal(int)
+    countdownToStart = pyqtSignal(int)
+    countdownToEnd = pyqtSignal(int)
 
     def __init__(self, model, *args, **kwargs):
         super().__init__(model, *args, **kwargs)
@@ -587,14 +588,19 @@ class PlanHandler(QObject):
         self.timer_countdown.timeout.connect(self._countdown)
 
     def _countdown(self):
-        self.countdown.emit(self._time_until_end())
+        time_until_start = self._time_until_start()
+        time_until_end = self._time_until_end()
 
-        # Knowing when an activity ends is more important than knowing when it
-        # starts. Therfore, we check first if the activity has ended.
-        if self._time_until_end() == 0:
-            self.activityExpired.emit(self.model.get_current_activity())
-        elif self._time_until_start() == 0:
-            self.activityBegan.emit(self.model.get_current_activity())
+        # `countdownToStart` and `countdownToEnd` must not fire at the same
+        # time so that listeners to both don't get both signals.
+        if time_until_start >= 0:
+            self.countdownToStart.emit(time_until_start)
+            if time_until_start == 0:
+                self.activityBegan.emit(self.model.get_current_activity())
+        else:
+            self.countdownToEnd.emit(time_until_end)
+            if time_until_end == 0:
+                self.activityExpired.emit(self.model.get_current_activity())
 
     def _time_until_start(self):
         if self.timer_countdown.isActive():
@@ -616,7 +622,7 @@ class PlanHandler(QObject):
         self.countdown_from = self.model.get_current_activity().start_time
         self.countdown_to = self.model.get_following_activity().start_time
         self.timer_countdown.start(490)
-        self.countdown.emit(self._time_until_end())
+        self._countdown()
         self.activityStarted.emit(self.model.get_current_activity())
 
     def start_from_index(self, index, preemptive=False):

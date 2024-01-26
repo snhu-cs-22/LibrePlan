@@ -188,8 +188,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.tray_icon.activated.connect(self.tray_icon_activated)
         self.tray_icon.messageClicked.connect(self.show)
 
-        self._tasklist_proxy.sourceModel().layoutChanged.connect(self.update_title)
-        self.table_plan.model().layoutChanged.connect(self.update_title)
+        self._tasklist_proxy.sourceModel().layoutChanged.connect(self.table_count_changed)
+        self.table_plan.model().layoutChanged.connect(self.table_count_changed)
 
         self.table_tasklist.selectionModel().selectionChanged.connect(
             lambda: self.show_selection_count(self.table_tasklist.selectionModel())
@@ -396,7 +396,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def activity_stopped(self):
         self._toggle_plan_running(False)
-        self.update_title()
+        self.table_count_changed()
 
     def _toggle_plan_running(self, enabled):
         # Start Buttons/Actions
@@ -474,7 +474,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         )
         self._populate_header_context_menu(self.table_tasklist, self.menuTasklist_Show_Hide_Columns)
 
-        self.update_title()
+        self.table_count_changed()
 
     def _get_selected_plan_indices(self):
         return sorted([index.row() for index in self.table_plan.selectionModel().selectedRows()])
@@ -520,16 +520,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         count = len(selection_model.selectedRows())
         self.statusbar.showMessage(f"{count} selected")
 
-    def update_title(self):
+    def set_title(self, title):
+        self.setWindowTitle(title)
+        self.tray_icon.setToolTip(title)
+
+    def table_count_changed(self):
         activity_count = self.table_plan.model().rowCount() - 1
         task_count = self._tasklist_proxy.sourceModel().rowCount()
 
-        self.setWindowTitle(f"{activity_count} Activities, {task_count} Tasks - LibrePlan")
-        self.tray_icon.setToolTip(self.windowTitle())
+        self.set_title(f"{activity_count} Activities, {task_count} Tasks - LibrePlan")
 
-    def update_title_countdown(self, secs_to):
-        self.setWindowTitle(f"{self._stringify_time_duration(secs_to)} - LibrePlan")
-        self.tray_icon.setToolTip(self.windowTitle())
+    def countdown_to_start(self, secs_to):
+        self.set_title(f"{self._stringify_time_duration(secs_to)} Until Start - LibrePlan")
+
+    def countdown_to_end(self, secs_to):
+        self.set_title(f"{self._stringify_time_duration(secs_to)} Until End - LibrePlan")
 
     def _stringify_time_duration(self, secs, time_format="hh:mm:ss"):
         """Workaround for having no idea how to properly represent time *durations*"""
