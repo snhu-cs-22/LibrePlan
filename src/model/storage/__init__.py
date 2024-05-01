@@ -2,6 +2,12 @@ from PyQt5.QtSql import QSqlDatabase, QSqlQuery
 
 from model.storage import queries
 
+class DbConnectionError(Exception):
+    def __init__(self, connection):
+        e = connection.lastError()
+        message = f"Failed to connect from database: {e.nativeErrorCode()} {e.type()} {e.text()}"
+        super().__init__(message)
+
 class QueryError(Exception):
     def __init__(self, query):
         q = query.executedQuery()
@@ -21,20 +27,30 @@ class Database:
 
     def __init__(self, path):
         self.path = path
-        self.connection = QSqlDatabase.addDatabase("QSQLITE")
-        self.connection.setHostName("libreplan")
 
     def connect(self):
-        if not self.connection.isOpen():
-            self.connection.setDatabaseName(self.path)
-            connected = self.connection.open()
-            if connected:
-                self._create_tables()
-            else:
-                e = self.connection.lastError()
-                print(f"Failed to connect from database: {e.nativeErrorCode()} {e.type()} {e.text()}")
-            return connected
-        return True
+        """Connects to the Database.
+
+        Returns `True` if it is a unique connection, `False` if one
+        already exists, and raising a `DbConnectionError` if a
+        connection cannot be made.
+        """
+
+        if QSqlDatabase.contains(self.path):
+            return False
+
+        self.connection = QSqlDatabase.addDatabase("QSQLITE", self.path)
+        self.connection.setHostName("libreplan")
+
+        if self.connection.isOpen():
+            return False
+
+        self.connection.setDatabaseName(self.path)
+        if self.connection.open():
+            self._create_tables()
+            return True
+        else:
+            raise DbConnectionError(self.connection)
 
     def disconnect(self):
         if self.connection.isOpen():
