@@ -527,12 +527,12 @@ class PlanTableModel(QAbstractTableModel):
     # Qt API Implementation
     ################################################################################
 
-    def rowCount(self, parent=QModelIndex):
+    def rowCount(self, parent=QModelIndex()):
         self.database.execute_query(self.query_count)
         self.query_count.first()
         return self.query_count.value("count")
 
-    def columnCount(self, parent=QModelIndex):
+    def columnCount(self, parent=QModelIndex()):
         return len(Activity.COLUMNS)
 
     def data(self, index, role):
