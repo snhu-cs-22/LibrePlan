@@ -8,11 +8,20 @@ class Backup:
         self.database = database
         self.config = config
 
-    def backup_name(self, time):
-        datetime = time.toString(
+    def create_backup_name(self):
+        """Creates a unique name for a backup file."""
+
+        datetime_str = QDateTime.currentDateTime().toString(
             self.DATETIME_FORMAT
         )
-        return f"{self.path}/backup-{datetime}.db"
+
+        number = 0
+        name = f"{self.path}/backup-{datetime_str}-{number:04}.db"
+        while QFile.exists(name):
+            number += 1
+            name = f"{self.path}/backup-{datetime_str}-{number:04}.db"
+
+        return name
 
     def export(self, path):
         db_file = QFile(self.database.path)
@@ -22,7 +31,7 @@ class Backup:
         # Make copy of database
 
         db_file = QFile(self.database.path)
-        db_file.copy(self.backup_name(QDateTime.currentDateTime()))
+        db_file.copy(self.create_backup_name())
 
         # Delete old backups
 
@@ -30,7 +39,7 @@ class Backup:
 
         backup_dir = QDir(self.path)
         backup_dir.setFilter(QDir.Files)
-        backup_dir.setNameFilters(["backup-????-??-??-??-??-??.db"])
+        backup_dir.setNameFilters(["backup-????-??-??-??-??-??*.db"])
         backup_dir.setSorting(QDir.Time | QDir.Reversed)
 
         backups = backup_dir.entryInfoList()
