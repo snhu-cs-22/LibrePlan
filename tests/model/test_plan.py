@@ -1,5 +1,6 @@
 import pytest
 from PyQt5.QtCore import QTime
+from PyQt5.QtWidgets import QApplication
 
 from model.plan import Activity, PlanTableModel
 from ui.importing import ReplaceOption
@@ -22,6 +23,28 @@ def test_inserting_deleting(plan):
     plan.delete_activities([0, 1, 2])
 
     assert plan.rowCount() == 0
+
+@pytest.fixture
+def application():
+    return QApplication([])
+
+def test_copying_pasting(plan, application):
+    plan.insert_activity(0)
+    plan.insert_activity(0)
+
+    plan.copy_activities([0, 1])
+    plan.paste_activities(0)
+
+    assert plan.rowCount() == 4
+
+def test_cutting_pasting(plan, application):
+    plan.insert_activity(0)
+    plan.insert_activity(0)
+
+    plan.cut_activities([0, 1])
+    plan.paste_activities(0)
+
+    assert plan.rowCount() == 2
 
 def test_plan_calculations(plan):
     # Test data from https://help.supermemo.org/images/thumb/b/bf/SuperMemo_Schedule_Plan.png/800px-SuperMemo_Schedule_Plan.png
