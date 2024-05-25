@@ -57,3 +57,9 @@ make test
 ```
 
 ... or by running `pytest` manually.
+
+## Licensing
+
+Copyright the LibrePlan authors.
+
+This project is licensed under the [GNU General Public License v3.0 or higher](LICENSE).
